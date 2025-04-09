@@ -57,6 +57,7 @@ SOURCES       = src/audit_cache.cpp \
 		src/audit_result.cpp \
 		src/audit_results_view.cpp \
 		src/audit_service.cpp \
+		src/cli_options_panel.cpp \
 		src/ctrace_cli.cpp \
 		src/error_highlighter.cpp \
 		src/file_tree_view.cpp \
@@ -65,7 +66,9 @@ SOURCES       = src/audit_cache.cpp \
 		src/main_window.cpp \
 		src/parser.cpp \
 		src/project.cpp \
-		src/project_manager.cpp moc_audit_results_view.cpp \
+		src/project_manager.cpp qrc_resources.cpp \
+		moc_audit_results_view.cpp \
+		moc_cli_options_panel.cpp \
 		moc_file_tree_view.cpp \
 		moc_main_window.cpp \
 		moc_project_manager.cpp
@@ -74,6 +77,7 @@ OBJECTS       = audit_cache.o \
 		audit_result.o \
 		audit_results_view.o \
 		audit_service.o \
+		cli_options_panel.o \
 		ctrace_cli.o \
 		error_highlighter.o \
 		file_tree_view.o \
@@ -83,7 +87,9 @@ OBJECTS       = audit_cache.o \
 		parser.o \
 		project.o \
 		project_manager.o \
+		qrc_resources.o \
 		moc_audit_results_view.o \
+		moc_cli_options_panel.o \
 		moc_file_tree_view.o \
 		moc_main_window.o \
 		moc_project_manager.o
@@ -196,6 +202,7 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		includes/audit_result.hpp \
 		includes/audit_results_view.hpp \
 		includes/audit_service.hpp \
+		includes/cli_options_panel.hpp \
 		includes/ctrace_cli.hpp \
 		includes/error_highlighter.hpp \
 		includes/file_tree_view.hpp \
@@ -209,6 +216,7 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		src/audit_result.cpp \
 		src/audit_results_view.cpp \
 		src/audit_service.cpp \
+		src/cli_options_panel.cpp \
 		src/ctrace_cli.cpp \
 		src/error_highlighter.cpp \
 		src/file_tree_view.cpp \
@@ -333,7 +341,8 @@ Makefile: coretrace-qt.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /usr/lib/qt/
 		/usr/lib/qt/mkspecs/features/exceptions.prf \
 		/usr/lib/qt/mkspecs/features/yacc.prf \
 		/usr/lib/qt/mkspecs/features/lex.prf \
-		coretrace-qt.pro
+		coretrace-qt.pro \
+		resources.qrc
 	$(QMAKE) -o Makefile coretrace-qt.pro
 /usr/lib/qt/mkspecs/features/spec_pre.prf:
 /usr/lib/qt/mkspecs/common/unix.conf:
@@ -440,6 +449,7 @@ Makefile: coretrace-qt.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /usr/lib/qt/
 /usr/lib/qt/mkspecs/features/yacc.prf:
 /usr/lib/qt/mkspecs/features/lex.prf:
 coretrace-qt.pro:
+resources.qrc:
 qmake: FORCE
 	@$(QMAKE) -o Makefile coretrace-qt.pro
 
@@ -454,9 +464,10 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
+	$(COPY_FILE) --parents resources.qrc $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/qt/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents includes/audit_cache.hpp includes/audit_factory.hpp includes/audit_result.hpp includes/audit_results_view.hpp includes/audit_service.hpp includes/ctrace_cli.hpp includes/error_highlighter.hpp includes/file_tree_view.hpp includes/ide.hpp includes/main_window.hpp includes/parser.hpp includes/project.hpp includes/project_manager.hpp includes/ui_component.hpp $(DISTDIR)/
-	$(COPY_FILE) --parents src/audit_cache.cpp src/audit_factory.cpp src/audit_result.cpp src/audit_results_view.cpp src/audit_service.cpp src/ctrace_cli.cpp src/error_highlighter.cpp src/file_tree_view.cpp src/ide.cpp src/main.cpp src/main_window.cpp src/parser.cpp src/project.cpp src/project_manager.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents includes/audit_cache.hpp includes/audit_factory.hpp includes/audit_result.hpp includes/audit_results_view.hpp includes/audit_service.hpp includes/cli_options_panel.hpp includes/ctrace_cli.hpp includes/error_highlighter.hpp includes/file_tree_view.hpp includes/ide.hpp includes/main_window.hpp includes/parser.hpp includes/project.hpp includes/project_manager.hpp includes/ui_component.hpp $(DISTDIR)/
+	$(COPY_FILE) --parents src/audit_cache.cpp src/audit_factory.cpp src/audit_result.cpp src/audit_results_view.cpp src/audit_service.cpp src/cli_options_panel.cpp src/ctrace_cli.cpp src/error_highlighter.cpp src/file_tree_view.cpp src/ide.cpp src/main.cpp src/main_window.cpp src/parser.cpp src/project.cpp src/project_manager.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -480,23 +491,34 @@ check: first
 
 benchmark: first
 
-compiler_rcc_make_all:
+compiler_rcc_make_all: qrc_resources.cpp
 compiler_rcc_clean:
+	-$(DEL_FILE) qrc_resources.cpp
+qrc_resources.cpp: resources.qrc \
+		/usr/bin/rcc \
+		icons/coretrace.png
+	/usr/bin/rcc -name resources resources.qrc -o qrc_resources.cpp
+
 compiler_moc_predefs_make_all: moc_predefs.h
 compiler_moc_predefs_clean:
 	-$(DEL_FILE) moc_predefs.h
 moc_predefs.h: /usr/lib/qt/mkspecs/features/data/dummy.cpp
 	g++ -pipe -O2 -flto -fno-fat-lto-objects -Wall -Wextra -dM -E -o moc_predefs.h /usr/lib/qt/mkspecs/features/data/dummy.cpp
 
-compiler_moc_header_make_all: moc_audit_results_view.cpp moc_file_tree_view.cpp moc_main_window.cpp moc_project_manager.cpp
+compiler_moc_header_make_all: moc_audit_results_view.cpp moc_cli_options_panel.cpp moc_file_tree_view.cpp moc_main_window.cpp moc_project_manager.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) moc_audit_results_view.cpp moc_file_tree_view.cpp moc_main_window.cpp moc_project_manager.cpp
+	-$(DEL_FILE) moc_audit_results_view.cpp moc_cli_options_panel.cpp moc_file_tree_view.cpp moc_main_window.cpp moc_project_manager.cpp
 moc_audit_results_view.cpp: includes/audit_results_view.hpp \
 		includes/ui_component.hpp \
 		includes/audit_result.hpp \
 		moc_predefs.h \
 		/usr/bin/moc
 	/usr/bin/moc $(DEFINES) --include /home/ren/project/coretrace-qt/moc_predefs.h -I/usr/lib/qt/mkspecs/linux-g++ -I/home/ren/project/coretrace-qt -I/home/ren/project/coretrace-qt -I/usr/include/qt -I/usr/include/qt/QtWidgets -I/usr/include/qt/QtGui -I/usr/include/qt/QtCore -I/usr/include/c++/14.2.1 -I/usr/include/c++/14.2.1/x86_64-pc-linux-gnu -I/usr/include/c++/14.2.1/backward -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include -I/usr/local/include -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include-fixed -I/usr/include includes/audit_results_view.hpp -o moc_audit_results_view.cpp
+
+moc_cli_options_panel.cpp: includes/cli_options_panel.hpp \
+		moc_predefs.h \
+		/usr/bin/moc
+	/usr/bin/moc $(DEFINES) --include /home/ren/project/coretrace-qt/moc_predefs.h -I/usr/lib/qt/mkspecs/linux-g++ -I/home/ren/project/coretrace-qt -I/home/ren/project/coretrace-qt -I/usr/include/qt -I/usr/include/qt/QtWidgets -I/usr/include/qt/QtGui -I/usr/include/qt/QtCore -I/usr/include/c++/14.2.1 -I/usr/include/c++/14.2.1/x86_64-pc-linux-gnu -I/usr/include/c++/14.2.1/backward -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include -I/usr/local/include -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include-fixed -I/usr/include includes/cli_options_panel.hpp -o moc_cli_options_panel.cpp
 
 moc_file_tree_view.cpp: includes/file_tree_view.hpp \
 		moc_predefs.h \
@@ -507,6 +529,7 @@ moc_main_window.cpp: includes/main_window.hpp \
 		includes/ui_component.hpp \
 		includes/audit_result.hpp \
 		includes/file_tree_view.hpp \
+		includes/cli_options_panel.hpp \
 		moc_predefs.h \
 		/usr/bin/moc
 	/usr/bin/moc $(DEFINES) --include /home/ren/project/coretrace-qt/moc_predefs.h -I/usr/lib/qt/mkspecs/linux-g++ -I/home/ren/project/coretrace-qt -I/home/ren/project/coretrace-qt -I/usr/include/qt -I/usr/include/qt/QtWidgets -I/usr/include/qt/QtGui -I/usr/include/qt/QtCore -I/usr/include/c++/14.2.1 -I/usr/include/c++/14.2.1/x86_64-pc-linux-gnu -I/usr/include/c++/14.2.1/backward -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include -I/usr/local/include -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.2.1/include-fixed -I/usr/include includes/main_window.hpp -o moc_main_window.cpp
@@ -529,7 +552,7 @@ compiler_yacc_impl_make_all:
 compiler_yacc_impl_clean:
 compiler_lex_make_all:
 compiler_lex_clean:
-compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean 
+compiler_clean: compiler_rcc_clean compiler_moc_predefs_clean compiler_moc_header_clean 
 
 ####### Compile
 
@@ -562,6 +585,9 @@ audit_service.o: src/audit_service.cpp includes/audit_service.hpp \
 		includes/error_highlighter.hpp
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o audit_service.o src/audit_service.cpp
 
+cli_options_panel.o: src/cli_options_panel.cpp includes/cli_options_panel.hpp
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o cli_options_panel.o src/cli_options_panel.cpp
+
 ctrace_cli.o: src/ctrace_cli.cpp includes/ctrace_cli.hpp
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o ctrace_cli.o src/ctrace_cli.cpp
 
@@ -577,6 +603,7 @@ ide.o: src/ide.cpp includes/ide.hpp \
 		includes/ui_component.hpp \
 		includes/audit_result.hpp \
 		includes/file_tree_view.hpp \
+		includes/cli_options_panel.hpp \
 		includes/audit_service.hpp \
 		includes/ctrace_cli.hpp \
 		includes/parser.hpp \
@@ -592,6 +619,7 @@ main.o: src/main.cpp includes/ide.hpp \
 		includes/ui_component.hpp \
 		includes/audit_result.hpp \
 		includes/file_tree_view.hpp \
+		includes/cli_options_panel.hpp \
 		includes/audit_service.hpp \
 		includes/ctrace_cli.hpp \
 		includes/parser.hpp \
@@ -605,6 +633,7 @@ main_window.o: src/main_window.cpp includes/main_window.hpp \
 		includes/ui_component.hpp \
 		includes/audit_result.hpp \
 		includes/file_tree_view.hpp \
+		includes/cli_options_panel.hpp \
 		includes/audit_results_view.hpp
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main_window.o src/main_window.cpp
 
@@ -622,6 +651,7 @@ project_manager.o: src/project_manager.cpp includes/project_manager.hpp \
 		includes/ui_component.hpp \
 		includes/audit_result.hpp \
 		includes/file_tree_view.hpp \
+		includes/cli_options_panel.hpp \
 		includes/audit_service.hpp \
 		includes/ctrace_cli.hpp \
 		includes/parser.hpp \
@@ -629,8 +659,14 @@ project_manager.o: src/project_manager.cpp includes/project_manager.hpp \
 		includes/error_highlighter.hpp
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o project_manager.o src/project_manager.cpp
 
+qrc_resources.o: qrc_resources.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o qrc_resources.o qrc_resources.cpp
+
 moc_audit_results_view.o: moc_audit_results_view.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_audit_results_view.o moc_audit_results_view.cpp
+
+moc_cli_options_panel.o: moc_cli_options_panel.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_cli_options_panel.o moc_cli_options_panel.cpp
 
 moc_file_tree_view.o: moc_file_tree_view.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_file_tree_view.o moc_file_tree_view.cpp

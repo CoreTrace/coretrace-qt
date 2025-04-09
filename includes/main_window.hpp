@@ -1,13 +1,15 @@
-#pragma once
+#ifndef MAIN_WINDOW_HPP
+#define MAIN_WINDOW_HPP
 
 #include "ui_component.hpp"
 #include "audit_result.hpp"
 #include "file_tree_view.hpp"
+#include "cli_options_panel.hpp"
 #include <QMainWindow>
 #include <QList>
 #include <QToolBar>
 #include <QAction>
-#include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QSplitter>
 #include <QTextEdit>
 #include <QFileSystemModel>
@@ -31,6 +33,9 @@ public:
     FileTreeView* getFileTreeView() const { return fileTree; }
     QTextEdit* getTextEditor() const { return textEditor; }
 
+public slots:
+    void toggleCliPanel();
+
 private:
     void setupUi();
     void setupMenuBar();
@@ -38,12 +43,17 @@ private:
     void setupStatusBar();
     void setupCentralWidget();
 
-    QList<UIComponent*> uiComponents;
+    // Member variables in initialization order
+    QSplitter* mainSplitter;
     QToolBar* mainToolBar;
     QWidget* centralWidget;
-    QVBoxLayout* mainLayout;
+    QHBoxLayout* mainLayout;
     FileTreeView* fileTree;
-    QSplitter* mainSplitter;
     QTextEdit* textEditor;
     QFileSystemModel* fileSystemModel;
-}; 
+    CliOptionsPanel* cliPanel;
+    QAction* toggleCliPanelAction;
+    QList<UIComponent*> uiComponents;
+};
+
+#endif // MAIN_WINDOW_HPP 

@@ -13,9 +13,15 @@
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
+    , mainSplitter(nullptr)
+    , mainToolBar(nullptr)
+    , centralWidget(nullptr)
+    , mainLayout(nullptr)
     , fileTree(new FileTreeView(this))
     , textEditor(new QTextEdit(this))
     , fileSystemModel(new QFileSystemModel(this))
+    , cliPanel(new CliOptionsPanel(this))
+    , toggleCliPanelAction(new QAction("CTrace Options", this))
 {
     setupUi();
     setupMenuBar();
@@ -29,6 +35,9 @@ MainWindow::~MainWindow()
     delete fileTree;
     delete textEditor;
     delete fileSystemModel;
+    delete cliPanel;
+    delete toggleCliPanelAction;
+    delete mainSplitter;
 }
 
 void MainWindow::setupUi()
@@ -42,9 +51,7 @@ void MainWindow::setupMenuBar()
     QMenuBar* menuBar = new QMenuBar(this);
     setMenuBar(menuBar);
 
-    // File menu
-    QMenu* fileMenu = menuBar->addMenu("Options");
-    QAction* exitAction = fileMenu->addAction("Exit");
+    QAction* exitAction = menuBar->addAction("Exit");
     connect(exitAction, &QAction::triggered, this, &QMainWindow::close);
 }
 
@@ -53,6 +60,12 @@ void MainWindow::setupToolBar()
     mainToolBar = addToolBar("Main Toolbar");
     mainToolBar->setMovable(false);
     mainToolBar->setFloatable(false);
+
+    // Add toggle button for CLI panel
+    toggleCliPanelAction->setCheckable(true);
+    toggleCliPanelAction->setChecked(false);
+    connect(toggleCliPanelAction, &QAction::triggered, this, &MainWindow::toggleCliPanel);
+    mainToolBar->addAction(toggleCliPanelAction);
 }
 
 void MainWindow::setupStatusBar()
@@ -62,28 +75,49 @@ void MainWindow::setupStatusBar()
 
 void MainWindow::setupCentralWidget()
 {
-    QWidget* centralWidget = new QWidget(this);
-    QHBoxLayout* layout = new QHBoxLayout(centralWidget);
+    if (centralWidget) {
+        delete centralWidget;
+    }
+    centralWidget = new QWidget(this);
     
-    // Create a splitter to separate the file tree and text editor
-    QSplitter* splitter = new QSplitter(Qt::Horizontal, centralWidget);
+    if (mainLayout) {
+        delete mainLayout;
+    }
+    mainLayout = new QHBoxLayout(centralWidget);
     
-    // Add file tree to the splitter with fixed width
-    fileTree->setFixedWidth(250);  // Set fixed width to 250 pixels
-    splitter->addWidget(fileTree);
+    // Create main splitter
+    if (mainSplitter) {
+        delete mainSplitter;
+    }
+    mainSplitter = new QSplitter(Qt::Horizontal, centralWidget);
+    
+    // Add file tree to the splitter
+    fileTree->setMinimumWidth(150);  // Set minimum width
+    fileTree->setMaximumWidth(400);  // Set maximum width
+    mainSplitter->addWidget(fileTree);
     
     // Add text editor to the splitter
     textEditor->setReadOnly(true);
-    splitter->addWidget(textEditor);
+    mainSplitter->addWidget(textEditor);
+    
+    // Add CLI panel to the splitter
+    cliPanel->setMinimumWidth(150);  // Set minimum width
+    cliPanel->setMaximumWidth(400);  // Set maximum width
+    cliPanel->setVisible(false);     // Initially hidden
+    mainSplitter->addWidget(cliPanel);
     
     // Set the splitter as the main layout
-    layout->addWidget(splitter);
+    mainLayout->addWidget(mainSplitter);
     setCentralWidget(centralWidget);
     
-    // Set initial splitter sizes (file tree takes 250 pixels, rest goes to text editor)
+    // Set initial splitter sizes
     QList<int> sizes;
-    sizes << 250 << width() - 250;
-    splitter->setSizes(sizes);
+    sizes << 250 << width() - 500 << 250;
+    mainSplitter->setSizes(sizes);
+    
+    // Set splitter handle properties
+    mainSplitter->setHandleWidth(5);  // Make the splitter handle more visible
+    mainSplitter->setChildrenCollapsible(false);  // Prevent panels from collapsing completely
     
     // Connect file selection signal
     connect(fileTree, &FileTreeView::fileSelected, this, [this](const QString& filePath) {
@@ -94,6 +128,39 @@ void MainWindow::setupCentralWidget()
             file.close();
         }
     });
+
+    // Connect CLI panel execute signal
+    connect(cliPanel, &CliOptionsPanel::executeClicked, this, [this](const QString& options) {
+        statusBar()->showMessage("Executing CTrace with options: " + options);
+    });
+}
+
+void MainWindow::toggleCliPanel()
+{
+    if (!mainSplitter) return;  // Safety check
+    
+    bool showPanel = toggleCliPanelAction->isChecked();
+    cliPanel->setVisible(showPanel);
+    
+    // Adjust splitter sizes
+    QList<int> sizes = mainSplitter->sizes();
+    int totalWidth = mainSplitter->width();
+    
+    if (showPanel) {
+        // When showing the panel, distribute space between all three widgets
+        int panelWidth = 250;  // Default width for the panel
+        int remainingWidth = totalWidth - panelWidth;
+        sizes[0] = qMin(250, remainingWidth / 2);  // File tree
+        sizes[1] = remainingWidth - sizes[0];       // Text editor
+        sizes[2] = panelWidth;                      // CLI panel
+    } else {
+        // When hiding the panel, distribute space between file tree and text editor
+        sizes[0] = qMin(250, totalWidth / 2);      // File tree
+        sizes[1] = totalWidth - sizes[0];          // Text editor
+        sizes[2] = 0;                              // CLI panel
+    }
+    
+    mainSplitter->setSizes(sizes);
 }
 
 void MainWindow::show() {
