@@ -17,7 +17,8 @@ endif()
 find_package(Qt5 COMPONENTS 
     Core 
     Widgets 
-    Gui
+    Gui 
+    Network
     REQUIRED
 )
 
@@ -38,6 +39,7 @@ set(SOURCES
     src/parser.cpp
     src/project.cpp
     src/project_manager.cpp
+    src/update_service.cpp
 )
 
 # Set header files
@@ -57,6 +59,8 @@ set(HEADERS
     includes/project.hpp
     includes/project_manager.hpp
     includes/ui_component.hpp
+    includes/update_service.hpp
+    includes/update_observer.hpp
 )
 
 # Set resource files
@@ -72,6 +76,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt5::Core
     Qt5::Widgets
     Qt5::Gui
+    Qt5::Network
 )
 
 # Include directories

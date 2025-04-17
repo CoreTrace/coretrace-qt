@@ -53,8 +53,8 @@ void CheckRequirements() {
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
-    CheckForUpdates();
-    CheckRequirements();
+    //CheckForUpdates();
+    //CheckRequirements();
     
     // Set application information
     app.setApplicationName("CoreTrace IDE");
