@@ -21,6 +21,10 @@ FileTreeView::FileTreeView(QWidget* parent) : QTreeView(parent) {
     header()->setSectionResizeMode(0, QHeaderView::Stretch);
     
     sortByColumn(0, Qt::AscendingOrder);
+    
+    // To make selection visible
+    setSelectionMode(QAbstractItemView::SingleSelection);
+    setSelectionBehavior(QAbstractItemView::SelectRows);
 }
 
 void FileTreeView::setRootPath(const QString& path) {
@@ -28,17 +32,23 @@ void FileTreeView::setRootPath(const QString& path) {
     setRootIndex(model->index(path));
 }
 
-void FileTreeView::mouseDoubleClickEvent(QMouseEvent* event)
+void FileTreeView::mouseReleaseEvent(QMouseEvent* event)
 {
-    QTreeView::mouseDoubleClickEvent(event);
+    QTreeView::mouseReleaseEvent(event);
     
-    QModelIndex index = indexAt(event->pos());
-    if (index.isValid()) {
-        QString filePath = model->filePath(index);
-        QFileInfo fileInfo(filePath);
-        
-        if (fileInfo.isFile()) {
-            emit fileSelected(filePath);
+    // Only process left clicks
+    if (event->button() == Qt::LeftButton) {
+        QModelIndex index = indexAt(event->pos());
+        if (index.isValid()) {
+            QString filePath = model->filePath(index);
+            QFileInfo fileInfo(filePath);
+            
+            if (fileInfo.isFile()) {
+                // Remember the current file
+                currentFilePath = filePath;
+                // Emit the signal
+                emit fileSelected(filePath);
+            }
         }
     }
-} 
+}

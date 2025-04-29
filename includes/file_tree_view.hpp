@@ -16,10 +16,11 @@ signals:
     void fileSelected(const QString& filePath);
 
 protected:
-    void mouseDoubleClickEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
 
 private:
     QFileSystemModel* model;
+    QString currentFilePath;
 };
 
-#endif // FILE_TREE_VIEW_HPP 
+#endif // FILE_TREE_VIEW_HPP

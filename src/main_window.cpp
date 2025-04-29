@@ -10,6 +10,13 @@
 #include <QStatusBar>
 #include <QFile>
 #include <QTextStream>
+#include <QMessageBox>
+#include <QShortcut>
+#include <QKeySequence>
+#include <QFileDialog>
+#include <QStyle>
+#include <QCheckBox>
+#include <QFocusEvent>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -22,6 +29,11 @@ MainWindow::MainWindow(QWidget* parent)
     , fileSystemModel(new QFileSystemModel(this))
     , cliPanel(new CliOptionsPanel(this))
     , toggleCliPanelAction(new QAction("CTrace Options", this))
+    , saveAction(new QAction("Save", this))
+    , importAction(new QAction("Open Folder", this))
+    , autosaveAction(new QAction("Autosave", this))
+    , autosaveEnabled(false)
+    , currentFilePath("")
 {
     setupUi();
     setupMenuBar();
@@ -37,7 +49,10 @@ MainWindow::~MainWindow()
     delete fileSystemModel;
     delete cliPanel;
     delete toggleCliPanelAction;
+    delete saveAction;
+    delete importAction;
     delete mainSplitter;
+    delete autosaveAction;
 }
 
 void MainWindow::setupUi()
@@ -50,18 +65,43 @@ void MainWindow::setupMenuBar()
 {
     QMenuBar* menuBar = new QMenuBar(this);
     setMenuBar(menuBar);
-
-    QAction* exitAction = menuBar->addAction("Exit");
+    
+    QMenu* fileMenu = menuBar->addMenu("File");
+    
+    // Change Import action to Open Folder
+    importAction->setStatusTip("Open a folder in the file tree");
+    connect(importAction, &QAction::triggered, this, &MainWindow::importFile);
+    fileMenu->addAction(importAction);
+    
+    // Add Save action
+    saveAction->setShortcuts(QKeySequence::Save);
+    saveAction->setStatusTip("Save the current file");
+    connect(saveAction, &QAction::triggered, this, &MainWindow::saveCurrentFile);
+    fileMenu->addAction(saveAction);
+    
+    // Add Autosave action
+    autosaveAction->setCheckable(true);
+    autosaveAction->setChecked(false);
+    autosaveAction->setStatusTip("Automatically save files when editor loses focus");
+    connect(autosaveAction, &QAction::triggered, this, &MainWindow::toggleAutosave);
+    fileMenu->addAction(autosaveAction);
+    
+    // Add separator
+    fileMenu->addSeparator();
+    
+    // Add Exit action
+    QAction* exitAction = fileMenu->addAction("Exit");
     connect(exitAction, &QAction::triggered, this, &QMainWindow::close);
 }
 
 void MainWindow::setupToolBar()
 {
+    // Create main toolbar
     mainToolBar = addToolBar("Main Toolbar");
     mainToolBar->setMovable(false);
     mainToolBar->setFloatable(false);
-
-    // Add toggle button for CLI panel
+    
+    // Keep only the CTrace Options button
     toggleCliPanelAction->setCheckable(true);
     toggleCliPanelAction->setChecked(false);
     connect(toggleCliPanelAction, &QAction::triggered, this, &MainWindow::toggleCliPanel);
@@ -97,7 +137,6 @@ void MainWindow::setupCentralWidget()
     mainSplitter->addWidget(fileTree);
     
     // Add text editor to the splitter
-    textEditor->setReadOnly(true);
     mainSplitter->addWidget(textEditor);
     
     // Add CLI panel to the splitter
@@ -121,11 +160,31 @@ void MainWindow::setupCentralWidget()
     
     // Connect file selection signal
     connect(fileTree, &FileTreeView::fileSelected, this, [this](const QString& filePath) {
+        // Save the current file if necessary before opening a new one
+        if (!currentFilePath.isEmpty() && textEditor->document()->isModified()) {
+            QMessageBox::StandardButton reply;
+            reply = QMessageBox::question(this, "Save Changes", 
+                "The current file has been modified. Do you want to save changes?",
+                QMessageBox::Yes|QMessageBox::No);
+                
+            if (reply == QMessageBox::Yes) {
+                saveCurrentFile();
+            }
+        }
+        
+        // Open the new file
         QFile file(filePath);
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             QTextStream in(&file);
             textEditor->setPlainText(in.readAll());
             file.close();
+            
+            // Update the current file path
+            currentFilePath = filePath;
+            statusBar()->showMessage("Editing: " + currentFilePath);
+            
+            // Reset the modification state
+            textEditor->document()->setModified(false);
         }
     });
 
@@ -133,6 +192,45 @@ void MainWindow::setupCentralWidget()
     connect(cliPanel, &CliOptionsPanel::executeClicked, this, [this](const QString& options) {
         statusBar()->showMessage("Executing CTrace with options: " + options);
     });
+    
+    // Remove duplicate shortcut and ensure text editor captures Ctrl+S
+    textEditor->setFocus();
+    
+    // Install an event filter to capture keyboard shortcuts
+    textEditor->installEventFilter(this);
+    
+    // Enable document modification tracking
+    connect(textEditor->document(), &QTextDocument::contentsChanged, this, [this]() {
+        if (textEditor->document()->isModified() && !currentFilePath.isEmpty()) {
+            setWindowTitle("CoreTrace IDE *");
+            statusBar()->showMessage("Editing: " + currentFilePath + " (modified)");
+        }
+    });
+}
+
+// Add an eventFilter implementation to capture Ctrl+S
+bool MainWindow::eventFilter(QObject* obj, QEvent* event)
+{
+    if (obj == textEditor) {
+        if (event->type() == QEvent::KeyPress) {
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+            // Capture Ctrl+S
+            if (keyEvent->modifiers() == Qt::ControlModifier && keyEvent->key() == Qt::Key_S) {
+                saveCurrentFile();
+                return true; // Event has been handled
+            }
+        }
+        // Handle focus loss for autosave
+        else if (event->type() == QEvent::FocusOut) {
+            if (autosaveEnabled && !currentFilePath.isEmpty() && textEditor->document()->isModified()) {
+                saveCurrentFile();
+                // No need to return true here as we want the event to continue propagating
+            }
+        }
+    }
+    
+    // Let the parent class handle other events
+    return QMainWindow::eventFilter(obj, event);
 }
 
 void MainWindow::toggleCliPanel()
@@ -193,4 +291,58 @@ void MainWindow::addWidget(QWidget* widget, Qt::Alignment alignment) {
 
 void MainWindow::setProjectRoot(const QString& path) {
     fileTree->setRootPath(path);
-} 
+}
+
+void MainWindow::saveCurrentFile()
+{
+    if (currentFilePath.isEmpty()) {
+        statusBar()->showMessage("No file to save");
+        return;
+    }
+    
+    QFile file(currentFilePath);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream out(&file);
+        out << textEditor->toPlainText();
+        file.close();
+        
+        textEditor->document()->setModified(false);
+        setWindowTitle("CoreTrace IDE");
+        statusBar()->showMessage("File saved: " + currentFilePath);
+    } else {
+        QMessageBox::critical(this, "Error", "Could not save file: " + file.errorString());
+        statusBar()->showMessage("Error saving file: " + file.errorString());
+    }
+}
+
+void MainWindow::importFile()
+{
+    // Replace with folder selection instead of file
+    QString folderPath = QFileDialog::getExistingDirectory(this, 
+        "Open Folder", 
+        "", 
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+        
+    if (!folderPath.isEmpty()) {
+        // Use setProjectRoot method to open the folder in the tree view
+        setProjectRoot(folderPath);
+        statusBar()->showMessage("Opened folder: " + folderPath);
+    }
+}
+
+// Implementation of toggleAutosave function
+void MainWindow::toggleAutosave()
+{
+    autosaveEnabled = autosaveAction->isChecked();
+    
+    // Add a checkmark next to the menu when enabled
+    if (autosaveEnabled) {
+        // Use the system style checkmark icon
+        autosaveAction->setIcon(style()->standardIcon(QStyle::SP_DialogApplyButton));
+        statusBar()->showMessage("Autosave enabled", 3000);
+    } else {
+        // Remove the icon when disabled
+        autosaveAction->setIcon(QIcon());
+        statusBar()->showMessage("Autosave disabled", 3000);
+    }
+}
