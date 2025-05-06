@@ -13,6 +13,7 @@
 #include <QSplitter>
 #include <QTextEdit>
 #include <QFileSystemModel>
+#include <QKeyEvent>
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -35,6 +36,12 @@ public:
 
 public slots:
     void toggleCliPanel();
+    void saveCurrentFile();
+    void importFile(); 
+    void toggleAutosave();
+
+protected:
+    bool eventFilter(QObject* obj, QEvent* event) override;
 
 private:
     void setupUi();
@@ -53,7 +60,12 @@ private:
     QFileSystemModel* fileSystemModel;
     CliOptionsPanel* cliPanel;
     QAction* toggleCliPanelAction;
+    QAction* saveAction;
+    QAction* importAction;
+    QAction* autosaveAction;
+    bool autosaveEnabled;
+    QString currentFilePath;
     QList<UIComponent*> uiComponents;
 };
 
-#endif // MAIN_WINDOW_HPP 
+#endif // MAIN_WINDOW_HPP
