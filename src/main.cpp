@@ -5,10 +5,17 @@
 #include <QMessageBox>
 #include <QFile>
 #include <iostream>
+
+/**
+ * @brief Checks for application updates.
+ */
 void CheckForUpdates() {
     // TODO: Implement update check
 }
 
+/**
+ * @brief Checks if the required icons are present in the application directory.
+ */
 void CheckRequiredIcons() {
     QDir iconsDir("./icons");
     if (!iconsDir.exists()) {
@@ -35,6 +42,9 @@ void CheckRequiredIcons() {
     }
 }
 
+/**
+ * @brief Checks if all application requirements are met.
+ */
 void CheckRequirements() {
     QString currentPath = QDir::currentPath();
     std::cout << "Current working directory: " << currentPath.toStdString() << std::endl;
@@ -51,6 +61,12 @@ void CheckRequirements() {
     CheckRequiredIcons();
 }
 
+/**
+ * @brief The main entry point of the application.
+ * @param argc The number of command-line arguments.
+ * @param argv The array of command-line arguments.
+ * @return The exit code of the application.
+ */
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     CheckForUpdates();
@@ -72,4 +88,4 @@ int main(int argc, char *argv[]) {
     ide->stop();
     
     return result;
-} 
+}

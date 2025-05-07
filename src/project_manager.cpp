@@ -5,8 +5,16 @@
 #include <QMessageBox>
 #include "../includes/ide.hpp"
 
+/**
+ * @brief Constructs a ProjectManager object.
+ * @param parent The parent QObject.
+ */
 ProjectManager::ProjectManager(QObject* parent) : QObject(parent) {}
 
+/**
+ * @brief Opens a project from the specified directory path.
+ * @param path The directory path of the project.
+ */
 void ProjectManager::openProject(const QString& path) {
     QFileInfo fileInfo(path);
     if (!fileInfo.exists() || !fileInfo.isDir()) {
@@ -28,6 +36,10 @@ void ProjectManager::openProject(const QString& path) {
     IDE::getInstance()->getMainWindow()->setProjectRoot(path);
 }
 
+/**
+ * @brief Closes the specified project and deletes it.
+ * @param project The project to close.
+ */
 void ProjectManager::closeProject(Project* project) {
     if (projects.contains(project)) {
         projects.removeAll(project);
@@ -35,10 +47,17 @@ void ProjectManager::closeProject(Project* project) {
     }
 }
 
+/**
+ * @brief Gets the list of currently opened projects.
+ * @return A list of pointers to the opened projects.
+ */
 QList<Project*> ProjectManager::getProjects() const {
     return projects;
 }
 
+/**
+ * @brief Opens a dialog to select a project folder and opens the selected project.
+ */
 void ProjectManager::selectProjectFolder() {
     QString folderPath = QFileDialog::getExistingDirectory(
         nullptr,
@@ -52,4 +71,4 @@ void ProjectManager::selectProjectFolder() {
         QMessageBox::information(nullptr, "Project Opened", 
             QString("Project opened successfully: %1").arg(folderPath));
     }
-} 
+}

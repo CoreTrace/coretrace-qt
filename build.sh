@@ -31,6 +31,7 @@ make -j$(nproc) || {
 
 echo "Build successful!"
 echo "Executable is located in: $(pwd)/bin/"
+echo "A binary named "ctrace-cli" is is needed at the same directory as the executable to run the program."
 
 # Return to the original directory
 cd ..

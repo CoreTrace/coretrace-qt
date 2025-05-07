@@ -2,6 +2,10 @@
 #include <QFormLayout>
 #include <QStyle>
 
+/**
+ * @brief Constructs the CLI options panel.
+ * @param parent The parent widget.
+ */
 CliOptionsPanel::CliOptionsPanel(QWidget* parent)
     : QWidget(parent)
     , symbolicCheck(new QCheckBox("Symbolic Analysis", this))
@@ -15,6 +19,9 @@ CliOptionsPanel::CliOptionsPanel(QWidget* parent)
     connectSignals();
 }
 
+/**
+ * @brief Destructor for the CLI options panel.
+ */
 CliOptionsPanel::~CliOptionsPanel()
 {
     delete symbolicCheck;
@@ -25,6 +32,9 @@ CliOptionsPanel::~CliOptionsPanel()
     delete executeButton;
 }
 
+/**
+ * @brief Sets up the UI for the CLI options panel.
+ */
 void CliOptionsPanel::setupUi()
 {
     setFixedWidth(250);
@@ -68,6 +78,9 @@ void CliOptionsPanel::setupUi()
     mainLayout->addWidget(executeButton);
 }
 
+/**
+ * @brief Connects signals and slots for the CLI options panel.
+ */
 void CliOptionsPanel::connectSignals()
 {
     // Connect all checkbox to disable others when checked
@@ -95,6 +108,10 @@ void CliOptionsPanel::connectSignals()
     });
 }
 
+/**
+ * @brief Retrieves the command-line options based on the selected settings.
+ * @return A string containing the command-line options.
+ */
 QString CliOptionsPanel::getCommandOptions() const
 {
     QStringList options;
@@ -112,4 +129,4 @@ QString CliOptionsPanel::getCommandOptions() const
     }
 
     return options.join(" ");
-} 
+}

@@ -2,6 +2,10 @@
 #include <QGroupBox>
 #include <QFormLayout>
 
+/**
+ * @brief Constructs the CLI options dialog.
+ * @param parent The parent widget.
+ */
 CliOptionsDialog::CliOptionsDialog(QWidget* parent)
     : QDialog(parent)
     , symbolicCheck(new QCheckBox("Symbolic Analysis", this))
@@ -15,6 +19,9 @@ CliOptionsDialog::CliOptionsDialog(QWidget* parent)
     connectSignals();
 }
 
+/**
+ * @brief Destructor for the CLI options dialog.
+ */
 CliOptionsDialog::~CliOptionsDialog()
 {
     delete symbolicCheck;
@@ -25,6 +32,9 @@ CliOptionsDialog::~CliOptionsDialog()
     delete buttonBox;
 }
 
+/**
+ * @brief Sets up the UI for the CLI options dialog.
+ */
 void CliOptionsDialog::setupUi()
 {
     setWindowTitle("CTrace Analysis Options");
@@ -53,6 +63,9 @@ void CliOptionsDialog::setupUi()
     mainLayout->addWidget(buttonBox);
 }
 
+/**
+ * @brief Connects signals and slots for the CLI options dialog.
+ */
 void CliOptionsDialog::connectSignals()
 {
     // Connect all checkbox to disable others when checked
@@ -79,6 +92,10 @@ void CliOptionsDialog::connectSignals()
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
 
+/**
+ * @brief Retrieves the command-line options based on the selected settings.
+ * @return A string containing the command-line options.
+ */
 QString CliOptionsDialog::getCommandOptions() const
 {
     QStringList options;
@@ -96,4 +113,4 @@ QString CliOptionsDialog::getCommandOptions() const
     }
 
     return options.join(" ");
-} 
+}
