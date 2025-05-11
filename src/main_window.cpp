@@ -18,6 +18,10 @@
 #include <QCheckBox>
 #include <QFocusEvent>
 
+/**
+ * @brief Constructs the MainWindow object.
+ * @param parent The parent widget.
+ */
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , mainSplitter(nullptr)
@@ -42,6 +46,9 @@ MainWindow::MainWindow(QWidget* parent)
     setupCentralWidget();
 }
 
+/**
+ * @brief Destructor for MainWindow.
+ */
 MainWindow::~MainWindow()
 {
     delete fileTree;
@@ -55,12 +62,18 @@ MainWindow::~MainWindow()
     delete autosaveAction;
 }
 
+/**
+ * @brief Sets up the UI for the main window.
+ */
 void MainWindow::setupUi()
 {
     setWindowTitle("CoreTrace IDE");
     resize(800, 600);
 }
 
+/**
+ * @brief Sets up the menu bar and its actions.
+ */
 void MainWindow::setupMenuBar()
 {
     QMenuBar* menuBar = new QMenuBar(this);
@@ -94,6 +107,9 @@ void MainWindow::setupMenuBar()
     connect(exitAction, &QAction::triggered, this, &QMainWindow::close);
 }
 
+/**
+ * @brief Sets up the toolbar and its actions.
+ */
 void MainWindow::setupToolBar()
 {
     // Create main toolbar
@@ -108,11 +124,17 @@ void MainWindow::setupToolBar()
     mainToolBar->addAction(toggleCliPanelAction);
 }
 
+/**
+ * @brief Sets up the status bar.
+ */
 void MainWindow::setupStatusBar()
 {
     statusBar()->showMessage("Ready");
 }
 
+/**
+ * @brief Sets up the central widget and its layout.
+ */
 void MainWindow::setupCentralWidget()
 {
     if (centralWidget) {
@@ -208,7 +230,12 @@ void MainWindow::setupCentralWidget()
     });
 }
 
-// Add an eventFilter implementation to capture Ctrl+S
+/**
+ * @brief Event filter to handle keyboard shortcuts and focus events.
+ * @param obj The object receiving the event.
+ * @param event The event to be processed.
+ * @return True if the event was handled, otherwise false.
+ */
 bool MainWindow::eventFilter(QObject* obj, QEvent* event)
 {
     if (obj == textEditor) {
@@ -233,6 +260,9 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event)
     return QMainWindow::eventFilter(obj, event);
 }
 
+/**
+ * @brief Toggles the visibility of the CLI panel.
+ */
 void MainWindow::toggleCliPanel()
 {
     if (!mainSplitter) return;  // Safety check
@@ -261,10 +291,17 @@ void MainWindow::toggleCliPanel()
     mainSplitter->setSizes(sizes);
 }
 
+/**
+ * @brief Displays the main window.
+ */
 void MainWindow::show() {
     QMainWindow::show();
 }
 
+/**
+ * @brief Updates the audit results in the UI.
+ * @param results The list of audit results to display.
+ */
 void MainWindow::updateAuditResults(const QList<AuditResult>& results) {
     for (UIComponent* component : uiComponents) {
         if (AuditResultsView* resultsView = dynamic_cast<AuditResultsView*>(component)) {
@@ -273,6 +310,14 @@ void MainWindow::updateAuditResults(const QList<AuditResult>& results) {
     }
 }
 
+/**
+ * @brief Adds a tool button to the toolbar.
+ * @param text The button text.
+ * @param toolTip The tooltip text.
+ * @param icon The button icon.
+ * @param slot The slot to connect the button to.
+ * @param receiver The object receiving the signal.
+ */
 void MainWindow::addToolButton(const QString& text, const QString& toolTip, 
                              const QIcon& icon, const char* slot, QObject* receiver) {
     QAction* action = new QAction(icon, text, this);
@@ -281,18 +326,33 @@ void MainWindow::addToolButton(const QString& text, const QString& toolTip,
     mainToolBar->addAction(action);
 }
 
+/**
+ * @brief Adds a separator to the toolbar.
+ */
 void MainWindow::addToolSeparator() {
     mainToolBar->addSeparator();
 }
 
+/**
+ * @brief Adds a widget to the main layout.
+ * @param widget The widget to add.
+ * @param alignment The alignment of the widget.
+ */
 void MainWindow::addWidget(QWidget* widget, Qt::Alignment alignment) {
     mainLayout->addWidget(widget, 0, alignment);
 }
 
+/**
+ * @brief Sets the root path for the project.
+ * @param path The root path to set.
+ */
 void MainWindow::setProjectRoot(const QString& path) {
     fileTree->setRootPath(path);
 }
 
+/**
+ * @brief Saves the current file being edited.
+ */
 void MainWindow::saveCurrentFile()
 {
     if (currentFilePath.isEmpty()) {
@@ -315,6 +375,9 @@ void MainWindow::saveCurrentFile()
     }
 }
 
+/**
+ * @brief Opens a folder and sets it as the project root.
+ */
 void MainWindow::importFile()
 {
     // Replace with folder selection instead of file
@@ -330,7 +393,9 @@ void MainWindow::importFile()
     }
 }
 
-// Implementation of toggleAutosave function
+/**
+ * @brief Toggles the autosave feature.
+ */
 void MainWindow::toggleAutosave()
 {
     autosaveEnabled = autosaveAction->isChecked();

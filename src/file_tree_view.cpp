@@ -8,6 +8,21 @@
 #include <QFile>
 #include <QDebug>
 
+/**
+ * @class FileTreeView
+ * @brief A custom QTreeView for displaying and managing files.
+ * 
+ * The FileTreeView class provides a file explorer with context menu
+ * options for creating, renaming, and deleting files and folders.
+ */
+
+/**
+ * @brief Constructs a FileTreeView object.
+ * 
+ * Initializes the file system model and configures the view.
+ * 
+ * @param parent The parent widget (default is nullptr).
+ */
 FileTreeView::FileTreeView(QWidget* parent) : QTreeView(parent) {
     model = new QFileSystemModel(this);
     model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot);
@@ -32,11 +47,25 @@ FileTreeView::FileTreeView(QWidget* parent) : QTreeView(parent) {
     setSelectionBehavior(QAbstractItemView::SelectRows);
 }
 
+/**
+ * @brief Sets the root path for the file tree view.
+ * 
+ * Updates the view to display the contents of the specified directory.
+ * 
+ * @param path The root directory path.
+ */
 void FileTreeView::setRootPath(const QString& path) {
     model->setRootPath(path);
     setRootIndex(model->index(path));
 }
 
+/**
+ * @brief Handles mouse release events to detect file selection.
+ * 
+ * Emits the `fileSelected` signal when a file is clicked.
+ * 
+ * @param event The mouse release event.
+ */
 void FileTreeView::mouseReleaseEvent(QMouseEvent* event)
 {
     QTreeView::mouseReleaseEvent(event);
@@ -58,6 +87,13 @@ void FileTreeView::mouseReleaseEvent(QMouseEvent* event)
     }
 }
 
+/**
+ * @brief Handles context menu events to display file/folder options.
+ * 
+ * Displays a context menu with options for creating, renaming, and deleting items.
+ * 
+ * @param event The context menu event.
+ */
 void FileTreeView::contextMenuEvent(QContextMenuEvent* event)
 {
     QModelIndex index = indexAt(event->pos());
@@ -105,6 +141,9 @@ QMenu* FileTreeView::createContextMenu()
     return menu;
 }
 
+/**
+ * @brief Creates a new file in the selected directory.
+ */
 void FileTreeView::createNewFile()
 {
     QString dirPath;
@@ -140,6 +179,9 @@ void FileTreeView::createNewFile()
     }
 }
 
+/**
+ * @brief Creates a new folder in the selected directory.
+ */
 void FileTreeView::createNewFolder()
 {
     QString dirPath;
@@ -175,6 +217,9 @@ void FileTreeView::createNewFolder()
     }
 }
 
+/**
+ * @brief Renames the selected file or folder.
+ */
 void FileTreeView::renameItem()
 {
     if (!contextMenuIndex.isValid()) {
@@ -212,6 +257,9 @@ void FileTreeView::renameItem()
     }
 }
 
+/**
+ * @brief Deletes the selected file or folder.
+ */
 void FileTreeView::deleteItem()
 {
     if (!contextMenuIndex.isValid()) {
@@ -250,6 +298,16 @@ void FileTreeView::deleteItem()
     }
 }
 
+/**
+ * @brief Generates a unique name for a file or folder.
+ * 
+ * Ensures that the name does not conflict with existing items in the directory.
+ * 
+ * @param basePath The base directory path.
+ * @param name The desired name.
+ * @param extension The file extension (optional).
+ * @return A unique file or folder name.
+ */
 QString FileTreeView::getUniqueName(const QString& basePath, const QString& name, const QString& extension)
 {
     QString fullName = name;
@@ -283,6 +341,13 @@ QString FileTreeView::getUniqueName(const QString& basePath, const QString& name
     return newPath;
 }
 
+/**
+ * @brief Creates a file or folder at the specified path.
+ * 
+ * @param path The path to create the file or folder.
+ * @param isFile True to create a file, false to create a folder.
+ * @return True if the creation was successful, false otherwise.
+ */
 bool FileTreeView::createFileOrFolder(const QString& path, bool isFile)
 {
     if (isFile) {

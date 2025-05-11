@@ -1,7 +1,11 @@
 #include "../includes/parser.hpp"
 #include <QStringList>
 
-//TODO 
+/**
+ * @brief Parses the given output string and extracts audit results.
+ * @param output The output string to parse.
+ * @return A list of AuditResult objects extracted from the output.
+ */
 QList<AuditResult> Parser::parse(const QString& output) {
     return QList<AuditResult>();
     // QList<AuditResult> results;

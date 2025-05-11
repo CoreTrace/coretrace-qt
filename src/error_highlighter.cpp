@@ -5,6 +5,11 @@
 #include <QFile>
 #include <QTextStream>
 
+/**
+ * @brief Highlights errors in the specified file based on audit results.
+ * @param file The file to highlight errors in.
+ * @param results The list of audit results containing error information.
+ */
 void ErrorHighlighter::highlightErrors(const QString& file, const QList<AuditResult>& results) {
     QFile sourceFile(file);
     if (!sourceFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -40,4 +45,4 @@ void ErrorHighlighter::highlightErrors(const QString& file, const QList<AuditRes
             }
         }
     }
-} 
+}
