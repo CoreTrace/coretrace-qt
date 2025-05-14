@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=CoreTrace Qt
+Exec=coretrace-qt
+Icon=coretrace
+Type=Application
+Categories=Development;
