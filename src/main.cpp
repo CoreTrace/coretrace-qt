@@ -1,4 +1,5 @@
 #include "../includes/ide.hpp"
+#include "../includes/ctrace_cli.hpp"
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
@@ -58,7 +59,17 @@ void CheckRequirements() {
         std::cerr << "Expected path: " << cliPath.toStdString() << std::endl;
         exit(1);
     }
+    // Vérification du checksum du binaire coretrace-cli
+    CTraceCLI cliChecker;
+    if (!cliChecker.verifyChecksum()) {
+        // Le message d'erreur est déjà affiché dans verifyChecksum()
+        std::cerr << "coretrace-cli checksum verification failed." << std::endl;
+        exit(1);
+    }
+    
     CheckRequiredIcons();
+
+    std::cout << "All requirements are met." << std::endl;
 }
 
 /**
