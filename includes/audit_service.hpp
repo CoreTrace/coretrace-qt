@@ -11,7 +11,9 @@
 class AuditService {
 public:
     AuditService();
-    QList<AuditResult> performAudit(const QString& file);
+    ~AuditService();
+    
+    QList<AuditResult> performAudit(const QString& file, const QString& options = "");
 
 private:
     CTraceCLI ctraceCLI;

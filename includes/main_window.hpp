@@ -5,6 +5,7 @@
 #include "audit_result.hpp"
 #include "file_tree_view.hpp"
 #include "cli_options_panel.hpp"
+#include "output_display.hpp"
 #include <QMainWindow>
 #include <QList>
 #include <QToolBar>
@@ -14,6 +15,7 @@
 #include <QTextEdit>
 #include <QFileSystemModel>
 #include <QKeyEvent>
+#include <QVBoxLayout>
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -29,7 +31,7 @@ public:
     void addToolButton(const QString& text, const QString& toolTip, const QIcon& icon, 
                       const char* slot, QObject* receiver);
     void addToolSeparator();
-    void addWidget(QWidget* widget, Qt::Alignment alignment = Qt::AlignTop);
+    void addWidget(QWidget* widget, Qt::Alignment alignment = Qt::Alignment());
 
     FileTreeView* getFileTreeView() const { return fileTree; }
     QTextEdit* getTextEditor() const { return textEditor; }
@@ -54,11 +56,12 @@ private:
     QSplitter* mainSplitter;
     QToolBar* mainToolBar;
     QWidget* centralWidget;
-    QHBoxLayout* mainLayout;
+    QVBoxLayout* mainLayout;
     FileTreeView* fileTree;
     QTextEdit* textEditor;
     QFileSystemModel* fileSystemModel;
     CliOptionsPanel* cliPanel;
+    OutputDisplay* outputDisplay;
     QAction* toggleCliPanelAction;
     QAction* saveAction;
     QAction* importAction;

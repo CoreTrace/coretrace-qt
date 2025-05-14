@@ -23,26 +23,32 @@ AuditService::AuditService() {}
  * in the file.
  *
  * @param file The path to the file to be audited.
+ * @param options The options to be used with the ctrace CLI.
  * @return A QList of AuditResult objects containing the audit results.
  */
-QList<AuditResult> AuditService::performAudit(const QString& file) {
+QList<AuditResult> AuditService::performAudit(const QString& file, const QString& options) {
+    // Create a cache key that includes both file and options
+    QString cacheKey = file + "|" + options;
+    
     // Check cache first
-    QList<AuditResult> cachedResults = auditCache.getCachedResults(file);
+    QList<AuditResult> cachedResults = auditCache.getCachedResults(cacheKey);
     if (!cachedResults.isEmpty()) {
         return cachedResults;
     }
 
-    // Execute ctrace CLI
-    QString output = ctraceCLI.execute(file, "--all");
+    // Execute ctrace CLI with provided options
+    QString output = ctraceCLI.execute(file, options);
     
     // Parse results
     QList<AuditResult> results = parser.parse(output);
     
-    // Cache results
-    auditCache.cacheResults(file, results);
+    // Cache results with the combined key
+    auditCache.cacheResults(cacheKey, results);
     
     // Highlight errors in the file
     errorHighlighter.highlightErrors(file, results);
     
     return results;
 }
+
+AuditService::~AuditService() {}

@@ -7,4 +7,5 @@
 class Parser {
 public:
     QList<AuditResult> parse(const QString& output);
+    ~Parser();
 }; 

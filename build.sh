@@ -35,3 +35,6 @@ echo "A binary named "ctrace-cli" is is needed at the same directory as the exec
 
 # Return to the original directory
 cd ..
+mv build/coretrace-qt .
+gcc -o ctrace-cli ctrace-cli.c
+./coretrace-qt

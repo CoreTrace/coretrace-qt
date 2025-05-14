@@ -55,7 +55,7 @@ void CliOptionsDialog::setupUi()
     QGroupBox* verboseGroup = new QGroupBox("Verbose Level", this);
     QFormLayout* verboseLayout = new QFormLayout(verboseGroup);
     verboseSpin->setRange(0, 3);
-    verboseSpin->setValue(1);
+    verboseSpin->setValue(0);
     verboseLayout->addRow("Level:", verboseSpin);
 
     mainLayout->addWidget(analysisGroup);
