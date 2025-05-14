@@ -116,13 +116,10 @@ QString CliOptionsPanel::getCommandOptions() const
 {
     QStringList options;
 
-    if (allCheck->isChecked()) {
-        options << "--all";
-    } else {
-        if (symbolicCheck->isChecked()) options << "--symbolic";
-        if (staticCheck->isChecked()) options << "--static";
-        if (dynamicCheck->isChecked()) options << "--dynamic";
-    }
+    // Only add individual options, never use --all
+    if (symbolicCheck->isChecked()) options << "--symbolic";
+    if (staticCheck->isChecked()) options << "--static";
+    if (dynamicCheck->isChecked()) options << "--dynamic";
 
     if (verboseSpin->value() > 0) {
         options << "--verbose" << QString::number(verboseSpin->value());

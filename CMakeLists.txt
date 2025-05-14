@@ -38,6 +38,9 @@ set(SOURCES
     src/parser.cpp
     src/project.cpp
     src/project_manager.cpp
+    src/output_display.cpp
+    src/line_number_area.cpp
+    src/syntax_highlighter.cpp
 )
 
 # Set header files
@@ -57,6 +60,9 @@ set(HEADERS
     includes/project.hpp
     includes/project_manager.hpp
     includes/ui_component.hpp
+    includes/output_display.hpp
+    includes/line_number_area.hpp
+    includes/syntax_highlighter.hpp
 )
 
 # Set resource files

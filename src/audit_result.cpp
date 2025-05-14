@@ -23,6 +23,8 @@ AuditResult::AuditResult(const QString& fileName) : fileName(fileName) {}
  */
 void AuditResult::addIssue(const QString& issue) {
     issues.append(issue);
+    // Set the message to be the concatenation of all issues
+    message = issues.join("\n");
 }
 
 /**

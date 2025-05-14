@@ -96,16 +96,11 @@ void IDE::stop() {
     // Clean up components
     delete mainWindow;
     mainWindow = nullptr;
-    
     delete auditService;
     auditService = nullptr;
-    
     delete projectManager;
     projectManager = nullptr;
-    
-    // Clear the singleton instance
     delete instance;
     instance = nullptr;
-    
     qDebug() << "CoreTrace IDE stopped successfully";
 }

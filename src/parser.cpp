@@ -1,36 +1,50 @@
 #include "../includes/parser.hpp"
 #include <QStringList>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QString>
+#include <QList>
 
 /**
- * @brief Parses the given output string and extracts audit results.
+ * @brief Parses the given output string and extracts type and description from JSON.
  * @param output The output string to parse.
- * @return A list of AuditResult objects extracted from the output.
+ * @return A list containing a single AuditResult with the formatted output.
  */
 QList<AuditResult> Parser::parse(const QString& output) {
-    return QList<AuditResult>();
-    // QList<AuditResult> results;
-    // QStringList lines = output.split('\n');
+    QList<AuditResult> results;
     
-    // QString currentFile;
-    // AuditResult* currentResult = nullptr;
+    // Create a single audit result
+    AuditResult* result = new AuditResult("Command Output");
     
-    // for (const QString& line : lines) {
-    //     if (line.startsWith("File: ")) {
-    //         if (currentResult) {
-    //             results.append(*currentResult);
-    //             delete currentResult;
-    //         }
-    //         currentFile = line.mid(6).trimmed();
-    //         currentResult = new AuditResult(currentFile);
-    //     } else if (currentResult && !line.trimmed().isEmpty()) {
-    //         currentResult->addIssue(line.trimmed());
-    //     }
-    // }
+    // Split the output into command and JSON parts
+    QStringList parts = output.split('\n', Qt::SkipEmptyParts);
+    if (parts.size() >= 2) {
+        // First line is the command
+        result->addIssue("Command: " + parts[0].trimmed());
+        
+        // Try to parse the JSON part
+        QString jsonStr = parts[1].trimmed();
+        QJsonDocument doc = QJsonDocument::fromJson(jsonStr.toUtf8());
+        if (!doc.isNull() && doc.isObject()) {
+            QJsonObject obj = doc.object();
+            QString type = obj["type"].toString();
+            QString description = obj["description"].toString();
+            
+            result->addIssue("\nType: " + type);
+            result->addIssue("Description: " + description);
+        } else {
+            // If JSON parsing fails, show the raw output
+            result->addIssue("\nRaw output:\n" + output);
+        }
+    } else {
+        // If we can't split the output, show it as is
+        result->addIssue(output);
+    }
     
-    // if (currentResult) {
-    //     results.append(*currentResult);
-    //     delete currentResult;
-    // }
+    results.append(*result);
+    delete result;
     
-    // return results;
+    return results;
 }
+
+Parser::~Parser() {}
