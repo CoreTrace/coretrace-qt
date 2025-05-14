@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Guide - CoreTrace Qt IDE</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #2b5797;
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        h1, h2, h3 {
+            color: #2b5797;
+        }
+        header h1 {
+            color: white;
+        }
+        .navigation {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .navigation a {
+            margin-right: 15px;
+        }
+        .content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        a {
+            color: #0078d7;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        img {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+            margin: 10px 0;
+        }
+        .note {
+            background-color: #f0f7ff;
+            border-left: 4px solid #0078d7;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        code {
+            background-color: #f5f5f5;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>User Guide - CoreTrace Qt IDE</h1>
+        <p>Learn how to effectively use the CoreTrace IDE</p>
+    </header>
+
+    <div class="navigation">
+        <a href="../index.html">Home</a>
+        <a href="../api/index.html">API Documentation</a>
+        <a href="#installation">Installation</a>
+        <a href="#interface">Interface</a>
+        <a href="#projects">Project Management</a>
+        <a href="#traces">Trace Analysis</a>
+    </div>
+
+    <div class="content">
+        <h2>Introduction</h2>
+        <p>
+            Welcome to the CoreTrace Qt IDE user guide. This document will help you get started with the application 
+            and discover all its features.
+        </p>
+
+        <div class="note">
+            <strong>Note:</strong> This user guide is still under development and will be progressively enhanced 
+            with more details and screenshots.
+        </div>
+
+        <h2 id="installation">Installation</h2>
+        <h3>Prerequisites</h3>
+        <p>Before installing CoreTrace Qt IDE, make sure your system has the following components:</p>
+        <ul>
+            <li>Qt 6.x</li>
+            <li>CMake 3.16 or higher</li>
+            <li>C++17 compatible compiler</li>
+            <li>Git</li>
+        </ul>
+
+        <h3>Installation Procedure</h3>
+        <h4>Linux/macOS</h4>
+        <p>Follow these steps to install CoreTrace Qt IDE on Linux or macOS:</p>
+        <ol>
+            <li>Clone the repository:
+                <pre>git clone https://github.com/yourusername/coretrace-qt.git
+cd coretrace-qt</pre>
+            </li>
+            <li>Make the build script executable:
+                <pre>chmod +x build.sh</pre>
+            </li>
+            <li>Run the build script:
+                <pre>./build.sh</pre>
+            </li>
+        </ol>
+
+        <h4>Windows</h4>
+        <p>For Windows builds, we recommend using MXE (MinGW-w64 Cross Compiler) to create a standalone executable:</p>
+        <ol>
+            <li>Install MXE by following their <a href="https://mxe.cc/#tutorial" target="_blank">installation guide</a></li>
+            <li>Use the provided Makefile:
+                <pre>make -f Makefile.windows</pre>
+            </li>
+        </ol>
+
+        <h2 id="interface">User Interface</h2>
+        <p>
+            The CoreTrace Qt IDE interface is designed to be intuitive and efficient. It consists of the following elements:
+        </p>
+
+        <h3>Main View</h3>
+        <p>
+            The main view is divided into several areas:
+        </p>
+        <ul>
+            <li><strong>File Explorer</strong> - Allows navigation through project files.</li>
+            <li><strong>Code Editor</strong> - Main area for viewing and modifying source code.</li>
+            <li><strong>Output Panel</strong> - Displays messages, errors, and application results.</li>
+            <li><strong>Audit Results View</strong> - Presents trace analysis results.</li>
+        </ul>
+
+        <h2 id="projects">Project Management</h2>
+        <p>
+            CoreTrace Qt IDE offers comprehensive features for project management.
+        </p>
+
+        <h3>Creating a Project</h3>
+        <p>To create a new project:</p>
+        <ol>
+            <li>Click on "File > New Project" in the menu bar.</li>
+            <li>Select the type of project you want to create.</li>
+            <li>Define the location and name of the project.</li>
+            <li>Configure the options specific to the chosen project type.</li>
+            <li>Click on "Create" to generate the project structure.</li>
+        </ol>
+
+        <h3>Opening a Project</h3>
+        <p>To open an existing project:</p>
+        <ol>
+            <li>Click on "File > Open Project" in the menu bar.</li>
+            <li>Navigate to the project folder.</li>
+            <li>Select the project file and click "Open".</li>
+        </ol>
+
+        <h2 id="traces">Trace Analysis</h2>
+        <p>
+            Trace analysis is one of the main features of CoreTrace Qt IDE.
+        </p>
+
+        <h3>Importing Traces</h3>
+        <p>To import traces for analysis:</p>
+        <ol>
+            <li>Open your project in the IDE.</li>
+            <li>Click on "Tools > Import Traces" in the menu bar.</li>
+            <li>Select the trace files to import.</li>
+            <li>Configure import options if necessary.</li>
+            <li>Click on "Import" to load the traces into the project.</li>
+        </ol>
+
+        <h3>Viewing Results</h3>
+        <p>
+            Once the traces are analyzed, the results are displayed in the audit results view, 
+            where you can explore various metrics and information gathered.
+        </p>
+
+        <div class="note">
+            <strong>Tip:</strong> Double-click on an item in the results view to directly access 
+            the corresponding source code.
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 CoreTrace Qt IDE - Documentation hosted on GitHub Pages</p>
+        <p><a href="../index.html">Back to Home</a></p>
+    </footer>
+</body>
+</html>
