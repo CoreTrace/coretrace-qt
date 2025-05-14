@@ -2,11 +2,9 @@ name: Deploy Documentation to GitHub Pages
 
 on:
   push:
-    branches: [ main, 14-feat-create-and-host-developer-documentation]
-  # Permet également de lancer le workflow manuellement depuis l'interface GitHub
+    branches: [ main, master, 14-feat-create-and-host-developer-documentation ]
   workflow_dispatch:
 
-# Ajout des permissions nécessaires
 permissions:
   contents: write
   pages: write
@@ -24,9 +22,16 @@ jobs:
       - name: Generate Documentation
         run: doxygen docs/Doxyfile
 
+      - name: Create .nojekyll file
+        run: touch docs/.nojekyll
+
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: docs
           branch: gh-pages
           clean: true
+          clean-exclude: |
+            .git
+            .github
+            .nojekyll
