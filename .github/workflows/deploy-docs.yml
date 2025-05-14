@@ -5,12 +5,14 @@ on:
     branches: [ main, master, 14-feat-create-and-host-developer-documentation ]
   workflow_dispatch:
 
+# Définir les permissions
 permissions:
-  contents: write
+  contents: read
   pages: write
+  id-token: write
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -22,16 +24,24 @@ jobs:
       - name: Generate Documentation
         run: doxygen docs/Doxyfile
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
       - name: Create .nojekyll file
         run: touch docs/.nojekyll
 
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          folder: docs
-          branch: gh-pages
-          clean: true
-          clean-exclude: |
-            .git
-            .github
-            .nojekyll
+          path: 'docs'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
