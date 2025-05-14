@@ -39,6 +39,7 @@ set(SOURCES
     src/project.cpp
     src/project_manager.cpp
     src/output_display.cpp
+    src/line_number_area.cpp
 )
 
 # Set header files
@@ -59,7 +60,7 @@ set(HEADERS
     includes/project_manager.hpp
     includes/ui_component.hpp
     includes/output_display.hpp
-
+    includes/line_number_area.hpp
 )
 
 # Set resource files

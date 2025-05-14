@@ -1,6 +1,7 @@
 #include "../includes/main_window.hpp"
 #include "../includes/audit_results_view.hpp"
 #include "../includes/ide.hpp"
+#include "../includes/line_number_area.hpp"
 #include <iostream>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -21,6 +22,13 @@
 #include <QFocusEvent>
 #include <QSizePolicy>
 #include <QDir>
+#include <QHBoxLayout>
+#include <QScrollBar>
+#include <QTextEdit>
+#include <QInputDialog>
+#include <QDialog>
+#include <QLineEdit>
+#include <QKeyEvent>
 
 /**
  * @brief Constructs the MainWindow object.
@@ -186,9 +194,22 @@ void MainWindow::setupCentralWidget()
     // Add left container to splitter
     mainSplitter->addWidget(leftContainer);
     
-    // Add text editor directly to splitter and set expanding policy
+    // Create a container for the text editor and line numbers
+    QWidget* editorContainer = new QWidget(this);
+    QHBoxLayout* editorLayout = new QHBoxLayout(editorContainer);
+    editorLayout->setContentsMargins(0, 0, 0, 0);
+    editorLayout->setSpacing(0);
+    
+    // Create and add line number area
+    LineNumberArea* lineNumberArea = new LineNumberArea(textEditor);
+    editorLayout->addWidget(lineNumberArea);
+    
+    // Add text editor to the container
     textEditor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    mainSplitter->addWidget(textEditor);
+    editorLayout->addWidget(textEditor);
+    
+    // Add editor container to splitter
+    mainSplitter->addWidget(editorContainer);
     
     // Add CLI panel to the right side of the splitter
     cliPanel->setMinimumWidth(150);
@@ -212,6 +233,15 @@ void MainWindow::setupCentralWidget()
     // Set splitter handle properties
     mainSplitter->setHandleWidth(5);
     mainSplitter->setChildrenCollapsible(false);
+    
+    // Connect text editor signals to update line numbers
+    connect(textEditor->document(), &QTextDocument::blockCountChanged, this, [lineNumberArea]() {
+        lineNumberArea->update();
+    });
+    
+    connect(textEditor->verticalScrollBar(), &QScrollBar::valueChanged, this, [lineNumberArea]() {
+        lineNumberArea->update();
+    });
     
     // Connect file selection signal
     connect(fileTree, &FileTreeView::fileSelected, this, [this](const QString& filePath) {
@@ -318,7 +348,12 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event)
             QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
             // Capture Ctrl+S
             if (keyEvent->modifiers() == Qt::ControlModifier && keyEvent->key() == Qt::Key_S) {
-                saveCurrentFile();
+                this->saveCurrentFile();
+                return true; // Event has been handled
+            }
+            // Capture Ctrl+F
+            if (keyEvent->modifiers() == Qt::ControlModifier && keyEvent->key() == Qt::Key_F) {
+                this->findNext();
                 return true; // Event has been handled
             }
         }
@@ -477,4 +512,67 @@ void MainWindow::toggleAutosave()
         autosaveAction->setIcon(QIcon());
         statusBar()->showMessage("Autosave disabled", 3000);
     }
+}
+
+/**
+ * @brief Opens a search dialog and highlights all occurrences of the search term.
+ */
+void MainWindow::findNext() {
+    // Create a custom dialog
+    QDialog* dialog = new QDialog(this);
+    dialog->setWindowTitle("Find Text");
+    dialog->setFixedSize(300, 50);
+    
+    // Create layout
+    QVBoxLayout* layout = new QVBoxLayout(dialog);
+    layout->setContentsMargins(10, 10, 10, 10);
+    
+    // Create line edit
+    QLineEdit* searchEdit = new QLineEdit(dialog);
+    searchEdit->setPlaceholderText("Enter text to find...");
+    layout->addWidget(searchEdit);
+    
+    // Set focus to line edit
+    searchEdit->setFocus();
+    
+    // Handle Enter key
+    connect(searchEdit, &QLineEdit::returnPressed, dialog, &QDialog::accept);
+    
+    // Handle Escape key
+    QShortcut* escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), dialog);
+    connect(escapeShortcut, &QShortcut::activated, dialog, &QDialog::reject);
+    
+    // Show dialog
+    if (dialog->exec() == QDialog::Accepted && !searchEdit->text().isEmpty()) {
+        QString searchTerm = searchEdit->text();
+        
+        // Clear previous highlights
+        QList<QTextEdit::ExtraSelection> extraSelections;
+        QTextEdit::ExtraSelection selection;
+        
+        // Create a more visible highlight color
+        QColor highlightColor(255, 255, 0, 100);  // Semi-transparent yellow
+        selection.format.setBackground(highlightColor);
+        selection.format.setForeground(Qt::black);  // Ensure text remains readable
+        
+        // Find all occurrences
+        QTextCursor cursor = textEditor->document()->find(searchTerm);
+        while (!cursor.isNull()) {
+            selection.cursor = cursor;
+            extraSelections.append(selection);
+            cursor = textEditor->document()->find(searchTerm, cursor);
+        }
+        
+        // Apply highlights
+        textEditor->setExtraSelections(extraSelections);
+        
+        // Move to first occurrence
+        if (!extraSelections.isEmpty()) {
+            textEditor->setTextCursor(extraSelections.first().cursor);
+        }
+        
+        statusBar()->showMessage(QString("Found %1 occurrences").arg(extraSelections.size()), 3000);
+    }
+    
+    delete dialog;
 }

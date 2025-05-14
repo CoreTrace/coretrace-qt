@@ -41,7 +41,7 @@ public slots:
     void saveCurrentFile();
     void importFile(); 
     void toggleAutosave();
-
+    void findNext();
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
 
