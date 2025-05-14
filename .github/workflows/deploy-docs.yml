@@ -6,6 +6,11 @@ on:
   # Permet également de lancer le workflow manuellement depuis l'interface GitHub
   workflow_dispatch:
 
+# Ajout des permissions nécessaires
+permissions:
+  contents: write
+  pages: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
