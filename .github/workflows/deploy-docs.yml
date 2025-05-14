@@ -1,0 +1,27 @@
+name: Deploy Documentation to GitHub Pages
+
+on:
+  push:
+    branches: [ main, 14-feat-create-and-host-developer-documentation]
+  # Permet également de lancer le workflow manuellement depuis l'interface GitHub
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Doxygen
+        run: sudo apt-get install -y doxygen graphviz
+
+      - name: Generate Documentation
+        run: doxygen docs/Doxyfile
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: docs
+          branch: gh-pages
+          clean: true
