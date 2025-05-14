@@ -10,7 +10,7 @@ set(CMAKE_AUTOUIC ON)
 
 # Set compiler flags
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -g -ggdb -g3")
 endif()
 
 # Find required packages
@@ -40,6 +40,7 @@ set(SOURCES
     src/project_manager.cpp
     src/output_display.cpp
     src/line_number_area.cpp
+    src/syntax_highlighter.cpp
 )
 
 # Set header files
@@ -61,6 +62,7 @@ set(HEADERS
     includes/ui_component.hpp
     includes/output_display.hpp
     includes/line_number_area.hpp
+    includes/syntax_highlighter.hpp
 )
 
 # Set resource files

@@ -16,6 +16,7 @@
 #include <QFileSystemModel>
 #include <QKeyEvent>
 #include <QVBoxLayout>
+#include "syntax_highlighter.hpp"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -69,6 +70,7 @@ private:
     bool autosaveEnabled;
     QString currentFilePath;
     QList<UIComponent*> uiComponents;
+    CppHighlighter* syntaxHighlighter;
 };
 
 #endif // MAIN_WINDOW_HPP

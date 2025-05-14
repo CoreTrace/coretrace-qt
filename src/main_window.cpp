@@ -2,6 +2,7 @@
 #include "../includes/audit_results_view.hpp"
 #include "../includes/ide.hpp"
 #include "../includes/line_number_area.hpp"
+#include "../includes/syntax_highlighter.hpp"
 #include <iostream>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -51,6 +52,7 @@ MainWindow::MainWindow(QWidget* parent)
     , autosaveAction(new QAction("Autosave", this))
     , autosaveEnabled(false)
     , currentFilePath("")
+    , syntaxHighlighter(nullptr)
 {
     setupUi();
     setupMenuBar();
@@ -207,6 +209,9 @@ void MainWindow::setupCentralWidget()
     // Add text editor to the container
     textEditor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     editorLayout->addWidget(textEditor);
+
+    // Create syntax highlighter
+    syntaxHighlighter = new CppHighlighter(textEditor->document());
     
     // Add editor container to splitter
     mainSplitter->addWidget(editorContainer);
