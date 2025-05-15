@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['getauditservice_0',['getAuditService',['../classIDE.html#a65f92848a5ac010e7f1436a492955dc4',1,'IDE']]],
+  ['getcachedresults_1',['getCachedResults',['../classAuditCache.html#a47b69602262f7ab178fe4690ee7014e9',1,'AuditCache']]],
+  ['getcommandoptions_2',['getCommandOptions',['../classCliOptionsDialog.html#a69a48d9dd6c975d57871f85a386b976d',1,'CliOptionsDialog::getCommandOptions()'],['../classCliOptionsPanel.html#aed8942df83e0432e512223da238ccf9a',1,'CliOptionsPanel::getCommandOptions()']]],
+  ['getfilename_3',['getFileName',['../classAuditResult.html#afad7fa795fab0eb7a7907ecbaf64c8bd',1,'AuditResult']]],
+  ['getfiles_4',['getFiles',['../classProject.html#a748a0c40689ea39ca05cf875f07396e5',1,'Project']]],
+  ['getfiletreeview_5',['getFileTreeView',['../classMainWindow.html#ab4c0f5d0f1e4838e8ac1cf097794b373',1,'MainWindow']]],
+  ['getinstance_6',['getInstance',['../classIDE.html#a1ebd5948afc141de4ec06ffd27cdf9ff',1,'IDE']]],
+  ['getissues_7',['getIssues',['../classAuditResult.html#ab893f7b0df222f72af522ed82bbf4159',1,'AuditResult']]],
+  ['getline_8',['getLine',['../classAuditResult.html#a421895e960cd65fb9afd55aaf1a18fab',1,'AuditResult']]],
+  ['getmainwindow_9',['getMainWindow',['../classIDE.html#ab21889d8fee81db103ecb719a2f5d1e1',1,'IDE']]],
+  ['getmessage_10',['getMessage',['../classAuditResult.html#a2ffc22d94eed7e7acae596cb7c85130c',1,'AuditResult']]],
+  ['getname_11',['getName',['../classProject.html#ae5edd031c478ce8ab1cc0ca2e981a5a6',1,'Project']]],
+  ['getprojectmanager_12',['getProjectManager',['../classIDE.html#a0f31d5617daa79e255835995cd1243f4',1,'IDE']]],
+  ['getprojects_13',['getProjects',['../classProjectManager.html#aeb8035c2707036a06784359e22e3e328',1,'ProjectManager']]],
+  ['getsummary_14',['getSummary',['../classAuditResult.html#a72ccc19b41f8573fe310f25626700fb2',1,'AuditResult']]],
+  ['gettexteditor_15',['getTextEditor',['../classMainWindow.html#aff94a2e6b0187ff0f309df4f8e5173e2',1,'MainWindow']]],
+  ['getuniquename_16',['getUniqueName',['../classFileTreeView.html#aa0fa864a8a210fcde436fd9a779a11bf',1,'FileTreeView']]]
+];

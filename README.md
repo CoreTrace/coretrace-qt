@@ -2,6 +2,15 @@
 
 A modern Qt-based IDE for the CoreTrace project, providing a user-friendly interface for managing and analyzing traces.
 
+## Documentation
+
+Complete documentation for this project is available online:
+[https://coretrace.github.io/coretrace-qt/](https://coretrace.github.io/coretrace-qt/)
+
+The documentation includes:
+- API Reference: Technical documentation of the codebase
+- User Guide: Instructions for using the application
+
 ## Features
 
 - Modern Qt-based GUI
