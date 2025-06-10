@@ -17,7 +17,11 @@ QString CTraceCLI::execute(const QString& file, const QString& options) {
     // Split options into arguments
     QStringList arguments;
     if (!options.isEmpty()) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         arguments = options.split(' ', Qt::SkipEmptyParts);
+#else
+        arguments = options.split(' ', QString::SkipEmptyParts);
+#endif
     }
     arguments.append(file);
     

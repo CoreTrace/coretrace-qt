@@ -3,6 +3,7 @@
 #include "audit_result.hpp"
 #include <QString>
 #include <QList>
+#include <QStringList>
 
 class Parser {
 public:

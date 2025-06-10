@@ -25,6 +25,39 @@ A modern Qt-based IDE for the CoreTrace project, providing a user-friendly inter
 - libcurl
 - libssh2
 
+## Using the .sh Scripts
+
+The project includes several shell scripts at the root level that you can use to automate various tasks:
+
+### build.sh
+```bash
+./build.sh
+```
+This script automates the build process. It will:
+- Check for required dependencies
+- Create a build directory
+- Configure the project with CMake
+- Build the project
+- Install the executable (if specified)
+
+### clean.sh
+```bash
+./clean.sh
+```
+This script will clean the build directory and remove all build artifacts.
+
+### dist.sh
+```bash
+./dist.sh
+```
+This script creates distribution packages for the project.
+
+### test.sh
+```bash
+./test.sh
+```
+This script runs all unit tests for the project.
+
 ## Building the Project
 
 ### Linux/macOS
@@ -45,13 +78,34 @@ chmod +x build.sh
 ./build.sh
 ```
 
-The build script will:
+### Building the Project with build.sh
+
+Run the following command to build the project:
+```bash
+./build.sh
+```
+This will automate the build process. It will:
 - Check for required dependencies
 - Create a build directory
 - Configure the project with CMake
 - Build the project
 - Install the executable (if specified)
 
+### Building the AppImage with app-image-builder.sh
+
+If you wish to create an AppImage, use:
+```bash
+./app-image-builder.sh
+```
+This script helps in building an AppImage of the project for wider distribution. However, Wayland users should be aware that currently, AppImages do not work on Wayland. It's recommended to only use `build.sh` if you are using Wayland.
+
+### Cleaning the Repository with clean.sh
+
+To clean the repository and remove any build artifacts, run:
+```bash
+./clean.sh
+```
+This will clean the build directory and remove all temporary files and build outputs.
 ### Windows
 
 For Windows builds, we recommend using MXE (MinGW-w64 Cross Compiler) to create a standalone executable.
@@ -105,6 +159,6 @@ coretrace-qt/
 
 ## Contact
 
-Mail. cedric.roulof@epitech.eu
+Mail: cedric.roulof@epitech.eu
 
-Discord. : shookapic (faster response)
+Discord: shookapic (faster response)
