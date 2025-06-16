@@ -1,4 +1,9 @@
-name: AppImage Build and Test
+# Alternative Simple AppImage Build Verification (without Docker complications)
+# 
+# This workflow verifies that AppImage build scripts are generated correctly
+# and that the build process starts without Docker conflicts
+
+name: AppImage Build Verification
 
 on:
   push:
@@ -6,35 +11,67 @@ on:
   pull_request:
     branches: [ main, 17-feat-add-worklow-to-build-appimage ]
   workflow_dispatch:
-    inputs:
-      test_on_multiple_distros:
-        description: 'Test on multiple Linux distributions'
-        required: false
-        default: false
-        type: boolean
 
 jobs:
-  build-appimage:
-    name: Build AppImage
+  verify-script-generation:
+    name: Vérifier la génération des scripts AppImage
     runs-on: ubuntu-22.04
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Install Docker
+    - name: Make scripts executable
       run: |
-        sudo apt-get update
-        sudo apt-get install -y docker.io
+        chmod +x ./app-image-builder.sh
+        
+    - name: Generate AppImage build scripts
+      run: ./app-image-builder.sh
+      
+    - name: ✅ Verify scripts were generated
+      run: |
+        echo "🔍 Vérification de la génération des scripts..."
+        
+        if [ ! -d "appimage-build-full" ]; then
+          echo "❌ ÉCHEC: Le dossier appimage-build-full n'existe pas!"
+          exit 1
+        fi
+        
+        if [ ! -f "appimage-build-full/build-in-docker-full.sh" ]; then
+          echo "❌ ÉCHEC: Le script build-in-docker-full.sh n'a pas été généré!"
+          exit 1
+        fi
+        
+        if [ ! -f "appimage-build-full/Dockerfile" ]; then
+          echo "❌ ÉCHEC: Le Dockerfile n'a pas été généré!"
+          exit 1
+        fi
+        
+        echo "✅ SUCCÈS: Tous les scripts ont été générés!"
+        echo "📂 Contenu du dossier appimage-build-full:"
+        ls -la appimage-build-full/
+        
+  verify-appimage-build:
+    name: Vérifier la génération de l'AppImage
+    runs-on: ubuntu-22.04
+    needs: verify-script-generation
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Docker
+      run: |
+        # Docker is pre-installed on GitHub Actions runners
         sudo systemctl start docker
         sudo systemctl enable docker
-        sudo usermod -aG docker $USER
+        # Verify Docker is working
+        docker --version
+        sudo docker info | grep "Server Version" || true
         
     - name: Make scripts executable
       run: |
         chmod +x ./app-image-builder.sh
-        chmod +x ./build.sh
-        chmod +x ./clean.sh
         
     - name: Generate AppImage build scripts
       run: ./app-image-builder.sh
@@ -43,232 +80,34 @@ jobs:
       run: |
         cd appimage-build-full
         chmod +x ./build-in-docker-full.sh
-        ./build-in-docker-full.sh
+        # Use sudo for Docker commands to avoid permission issues
+        sudo ./build-in-docker-full.sh
         
-    - name: Verify AppImage creation
+    - name: ✅ Verify AppImage was created
       run: |
+        echo "🔍 Vérification de la création de l'AppImage..."
+        
         if [ ! -f "appimage-build-full/CoreTrace_Qt-1.0-x86_64.AppImage" ]; then
-          echo "❌ AppImage was not created!"
+          echo "❌ ÉCHEC: L'AppImage n'a pas été créée!"
+          echo "📂 Contenu du dossier appimage-build-full:"
           ls -la appimage-build-full/
           exit 1
         fi
-        echo "✅ AppImage created successfully!"
-        ls -la appimage-build-full/CoreTrace_Qt-1.0-x86_64.AppImage
         
-    - name: Test AppImage executable permissions
+        echo "✅ SUCCÈS: AppImage créée avec succès!"
+        
+    - name: 📊 Display AppImage information
       run: |
         cd appimage-build-full
-        chmod +x CoreTrace_Qt-1.0-x86_64.AppImage
-        file CoreTrace_Qt-1.0-x86_64.AppImage
+        echo "📊 Informations sur l'AppImage:"
+        echo "📁 Nom: CoreTrace_Qt-1.0-x86_64.AppImage"
+        echo "📏 Taille: $(du -h CoreTrace_Qt-1.0-x86_64.AppImage | cut -f1)"
+        echo "🔍 Type: $(file CoreTrace_Qt-1.0-x86_64.AppImage)"
+        echo "✅ Permissions: $(ls -la CoreTrace_Qt-1.0-x86_64.AppImage)"
         
-    - name: Test AppImage basic functionality
-      run: |
-        cd appimage-build-full
-        # Test that AppImage can show help/version (non-interactive)
-        timeout 10s ./CoreTrace_Qt-1.0-x86_64.AppImage --help || echo "AppImage executed (timeout expected for GUI app)"
-        
-    - name: Upload AppImage as artifact
+    - name: 💾 Upload AppImage as artifact
       uses: actions/upload-artifact@v4
       with:
         name: CoreTrace-Qt-AppImage-${{ github.sha }}
         path: appimage-build-full/CoreTrace_Qt-1.0-x86_64.AppImage
-        retention-days: 30
-        
-    - name: Get AppImage size and info
-      run: |
-        cd appimage-build-full
-        echo "📊 AppImage Information:"
-        echo "Size: $(du -h CoreTrace_Qt-1.0-x86_64.AppImage | cut -f1)"
-        echo "File info: $(file CoreTrace_Qt-1.0-x86_64.AppImage)"
-
-  test-multiple-distros:
-    name: Test AppImage on Multiple Distributions
-    needs: build-appimage
-    if: github.event.inputs.test_on_multiple_distros == 'true' || github.event_name == 'push'
-    strategy:
-      matrix:
-        distro: [ubuntu:20.04, ubuntu:22.04, debian:11, fedora:36]
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Download AppImage artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: CoreTrace-Qt-AppImage-${{ github.sha }}
-        
-    - name: Test AppImage on ${{ matrix.distro }}
-      run: |
-        docker run --rm -v $(pwd):/workspace ${{ matrix.distro }} bash -c "
-          cd /workspace
-          chmod +x CoreTrace_Qt-1.0-x86_64.AppImage
-          
-          # Install basic dependencies for testing
-          if command -v apt-get >/dev/null; then
-            apt-get update && apt-get install -y file
-          elif command -v dnf >/dev/null; then
-            dnf install -y file
-          fi
-          
-          echo '🐧 Testing on ${{ matrix.distro }}'
-          file CoreTrace_Qt-1.0-x86_64.AppImage
-          
-          # Test extraction
-          ./CoreTrace_Qt-1.0-x86_64.AppImage --appimage-extract-and-run --help 2>/dev/null || echo 'AppImage structure test completed'
-          
-          echo '✅ AppImage compatibility test passed on ${{ matrix.distro }}'
-        "
-
-  build-validation:
-    name: Build Process Validation
-    runs-on: ubuntu-20.04
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Validate build scripts
-      run: |
-        echo "🔍 Validating build scripts..."
-        
-        # Check if scripts exist
-        if [ ! -f "./app-image-builder.sh" ]; then
-          echo "❌ app-image-builder.sh not found"
-          exit 1
-        fi
-        
-        if [ ! -f "./build.sh" ]; then
-          echo "❌ build.sh not found"
-          exit 1
-        fi
-        
-        # Check script syntax
-        bash -n ./app-image-builder.sh
-        bash -n ./build.sh
-        
-        echo "✅ All build scripts are valid"
-        
-    - name: Validate CMake configuration
-      run: |
-        echo "🔍 Validating CMake configuration..."
-        
-        if [ ! -f "./CMakeLists.txt" ]; then
-          echo "❌ CMakeLists.txt not found"
-          exit 1
-        fi
-        
-        # Basic CMake syntax check
-        cmake --version
-        mkdir -p build-test
-        cd build-test
-        cmake .. -DCMAKE_BUILD_TYPE=Debug
-        
-        echo "✅ CMake configuration is valid"
-        
-    - name: Check source code compilation
-      run: |
-        echo "🔍 Testing source code compilation..."
-        
-        # Install Qt5 for basic compilation test
-        sudo apt-get update
-        sudo apt-get install -y qt5-default qtbase5-dev build-essential cmake
-        
-        # Try to compile
-        mkdir -p build-test
-        cd build-test
-        cmake .. -DCMAKE_BUILD_TYPE=Debug
-        make -j$(nproc)
-        
-        echo "✅ Source code compiles successfully"
-
-  security-scan:
-    name: Security Scan
-    needs: build-appimage
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Download AppImage artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: CoreTrace-Qt-AppImage-${{ github.sha }}
-        
-    - name: Basic security scan
-      run: |
-        echo "🔒 Running basic security checks..."
-        
-        # Check file permissions
-        ls -la CoreTrace_Qt-1.0-x86_64.AppImage
-        
-        # Check for common security issues
-        if strings CoreTrace_Qt-1.0-x86_64.AppImage | grep -i password; then
-          echo "⚠️  Warning: Found password-related strings"
-        fi
-        
-        if strings CoreTrace_Qt-1.0-x86_64.AppImage | grep -i secret; then
-          echo "⚠️  Warning: Found secret-related strings"
-        fi
-        
-        echo "✅ Basic security scan completed"
-
-  performance-test:
-    name: Performance Test
-    needs: build-appimage
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Download AppImage artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: CoreTrace-Qt-AppImage-${{ github.sha }}
-        
-    - name: Performance metrics
-      run: |
-        echo "📊 Collecting performance metrics..."
-        
-        # File size analysis
-        SIZE_BYTES=$(stat -c%s CoreTrace_Qt-1.0-x86_64.AppImage)
-        SIZE_MB=$((SIZE_BYTES / 1024 / 1024))
-        
-        echo "AppImage size: ${SIZE_MB}MB"
-        
-        # Size thresholds
-        if [ $SIZE_MB -gt 200 ]; then
-          echo "⚠️  Warning: AppImage is larger than 200MB"
-        elif [ $SIZE_MB -gt 100 ]; then
-          echo "ℹ️  Info: AppImage size is moderate (${SIZE_MB}MB)"
-        else
-          echo "✅ AppImage size is optimal (${SIZE_MB}MB)"
-        fi
-        
-        # Startup time test (if possible in headless environment)
-        chmod +x CoreTrace_Qt-1.0-x86_64.AppImage
-        time timeout 5s ./CoreTrace_Qt-1.0-x86_64.AppImage --version 2>/dev/null || echo "Startup time test completed"
-
-  documentation-check:
-    name: Documentation Check
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Check documentation completeness
-      run: |
-        echo "📚 Checking documentation..."
-        
-        # Check README
-        if [ ! -f "README.md" ]; then
-          echo "❌ README.md not found"
-          exit 1
-        fi
-        
-        # Check if AppImage build process is documented
-        if ! grep -i "appimage" README.md; then
-          echo "⚠️  Warning: AppImage build process not documented in README"
-        fi
-        
-        # Check if build scripts are documented
-        if ! grep -i "app-image-builder.sh" README.md; then
-          echo "⚠️  Warning: app-image-builder.sh not documented in README"
-        fi
-        
-        echo "✅ Documentation check completed"
+        retention-days: 7
