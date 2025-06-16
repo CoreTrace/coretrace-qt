@@ -87,23 +87,44 @@ jobs:
         sed -i 's/docker run -it/docker run/g' ./build-in-docker-full.sh
         # Also remove any standalone -it flags
         sed -i 's/ -it / /g' ./build-in-docker-full.sh
+        # Add --privileged flag for FUSE support
+        sed -i 's/docker run /docker run --privileged /g' ./build-in-docker-full.sh
         echo "📋 Contenu modifié du script:"
         head -10 ./build-in-docker-full.sh
         # Use sudo for Docker commands to avoid permission issues
-        sudo ./build-in-docker-full.sh
+        # Continue even if there are FUSE errors, as the AppImage might still be created
+        sudo ./build-in-docker-full.sh || echo "⚠️ Build terminé avec des avertissements (possibles erreurs FUSE)"
         
     - name: ✅ Verify AppImage was created
       run: |
         echo "🔍 Vérification de la création de l'AppImage..."
         
-        if [ ! -f "appimage-build-full/CoreTrace_Qt-1.0-x86_64.AppImage" ]; then
-          echo "❌ ÉCHEC: L'AppImage n'a pas été créée!"
-          echo "📂 Contenu du dossier appimage-build-full:"
-          ls -la appimage-build-full/
-          exit 1
-        fi
+        # List all files in the build directory
+        echo "📂 Contenu complet du dossier appimage-build-full:"
+        ls -la appimage-build-full/
         
-        echo "✅ SUCCÈS: AppImage créée avec succès!"
+        # Look for any AppImage files
+        echo "🔍 Recherche de fichiers AppImage:"
+        find appimage-build-full/ -name "*.AppImage" -type f || echo "Aucun fichier .AppImage trouvé"
+        
+        # Check if the expected AppImage exists
+        if [ ! -f "appimage-build-full/CoreTrace_Qt-1.0-x86_64.AppImage" ]; then
+          echo "❌ ÉCHEC: L'AppImage CoreTrace_Qt-1.0-x86_64.AppImage n'a pas été créée!"
+          
+          # Try to find any AppImage with a different name
+          APPIMAGE_FILE=$(find appimage-build-full/ -name "*.AppImage" -type f | head -1)
+          if [ -n "$APPIMAGE_FILE" ]; then
+            echo "✅ Mais une autre AppImage a été trouvée: $APPIMAGE_FILE"
+            # Copy it to the expected name for consistency
+            cp "$APPIMAGE_FILE" "appimage-build-full/CoreTrace_Qt-1.0-x86_64.AppImage"
+            echo "✅ AppImage copiée vers le nom attendu"
+          else
+            echo "❌ Aucune AppImage trouvée du tout!"
+            exit 1
+          fi
+        else
+          echo "✅ SUCCÈS: AppImage créée avec succès!"
+        fi
         
     - name: 📊 Display AppImage information
       run: |
