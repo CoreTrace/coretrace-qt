@@ -149,6 +149,22 @@ coretrace-qt/
 - Document all public interfaces
 - Write unit tests for new features
 
+## Continuous Integration
+
+The project uses GitHub Actions to automatically verify AppImage builds:
+
+- **Workflow**: `.github/workflows/appimage-build-test.yml`
+- **Triggers**: Push/PR to `main` or `develop` branches
+- **Verification**: Ensures AppImage is successfully generated
+- **Artifacts**: AppImage saved for 7 days after successful build
+
+### Local Verification
+
+To quickly check if an AppImage was generated locally:
+```bash
+./check-appimage.sh
+```
+
 ## Contributing
 
 1. Fork the repository

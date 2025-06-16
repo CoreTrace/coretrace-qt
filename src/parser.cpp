@@ -34,3 +34,10 @@ QList<AuditResult> Parser::parse(const QString& output) {
     
     // return results;
 }
+
+/**
+ * @brief Destructor for the Parser class.
+ */
+Parser::~Parser() {
+    // Empty destructor - no dynamic resources to clean up
+}
