@@ -80,6 +80,15 @@ jobs:
       run: |
         cd appimage-build-full
         chmod +x ./build-in-docker-full.sh
+        # Show the original script content
+        echo "📋 Contenu original du script:"
+        head -10 ./build-in-docker-full.sh
+        # Modify the script to remove -it flags for CI environment
+        sed -i 's/docker run -it/docker run/g' ./build-in-docker-full.sh
+        # Also remove any standalone -it flags
+        sed -i 's/ -it / /g' ./build-in-docker-full.sh
+        echo "📋 Contenu modifié du script:"
+        head -10 ./build-in-docker-full.sh
         # Use sudo for Docker commands to avoid permission issues
         sudo ./build-in-docker-full.sh
         
