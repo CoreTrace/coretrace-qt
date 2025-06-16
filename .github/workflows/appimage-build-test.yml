@@ -2,9 +2,9 @@ name: AppImage Build and Test
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, 17-feat-add-worklow-to-build-appimage ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, 17-feat-add-worklow-to-build-appimage ]
   workflow_dispatch:
     inputs:
       test_on_multiple_distros:
