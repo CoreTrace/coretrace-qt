@@ -28,7 +28,7 @@ make -j$(nproc) || {
     echo "Build failed"
     exit 1
 }
-
+mv coretrace-qt ../coretrace-qt
 echo "Build successful!"
 echo "Executable is located in: $(pwd)/bin/"
 echo "A binary named "ctrace-cli" is is needed at the same directory as the executable to run the program."
@@ -39,6 +39,20 @@ echo "Cloning into coretrace and building it..."
 sleep 3
 git clone https://github.com/CoreTrace/coretrace.git
 cd coretrace
+# Edit AnalysisTools.hpp: comment out original line 154 and insert new code
+file="include/Process/Tools/AnalysisTools.hpp"
+line_num=154
+tmpfile=$(mktemp)
+
+awk -v n="$line_num" '
+NR==n {
+    print "// " $0
+    print "        argsProcess.push_back(\"coretrace/build/flawfinder/src/flawfinder-build/flawfinder.py\");"
+    next
+}
+{ print }
+' "$file" > "$tmpfile" && mv "$tmpfile" "$file"
+
 mkdir -p build && cd build
 cmake ..                        \
     -DPARSER_TYPE=CLI11         \

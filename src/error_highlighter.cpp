@@ -30,9 +30,6 @@ void ErrorHighlighter::highlightErrors(const QString& file, const QList<AuditRes
     for (const AuditResult& result : results) {
         if (result.getFileName() == file) {
             for (const QString& issue : result.getIssues()) {
-                // This is a simplified version - in a real implementation,
-                // you would parse the issue string to get line numbers
-                // and highlight specific lines
                 QTextCursor cursor(&document);
                 cursor.movePosition(QTextCursor::Start);
                 
