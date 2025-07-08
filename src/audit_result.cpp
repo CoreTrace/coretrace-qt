@@ -14,7 +14,7 @@
  * 
  * @param fileName The name of the file being audited.
  */
-AuditResult::AuditResult(const QString& fileName) : fileName(fileName) {}
+AuditResult::AuditResult(const QString& fileName) : fileName(fileName), line(0), column(0), endLine(0), endColumn(0) {}
 
 /**
  * @brief Adds an issue to the audit result.
@@ -25,6 +25,60 @@ void AuditResult::addIssue(const QString& issue) {
     issues.append(issue);
     // Set the message to be the concatenation of all issues
     message = issues.join("\n");
+}
+
+/**
+ * @brief Sets the line number for this audit result.
+ * 
+ * @param lineNumber The line number where the issue was found.
+ */
+void AuditResult::setLine(int lineNumber) {
+    line = lineNumber;
+}
+
+/**
+ * @brief Sets the column number for this audit result.
+ * 
+ * @param columnNumber The column number where the issue was found.
+ */
+void AuditResult::setColumn(int columnNumber) {
+    column = columnNumber;
+}
+
+/**
+ * @brief Sets the end line number for this audit result.
+ * 
+ * @param endLineNumber The end line number of the issue.
+ */
+void AuditResult::setEndLine(int endLineNumber) {
+    endLine = endLineNumber;
+}
+
+/**
+ * @brief Sets the end column number for this audit result.
+ * 
+ * @param endColumnNumber The end column number of the issue.
+ */
+void AuditResult::setEndColumn(int endColumnNumber) {
+    endColumn = endColumnNumber;
+}
+
+/**
+ * @brief Sets the file path for this audit result.
+ * 
+ * @param path The full file path.
+ */
+void AuditResult::setFilePath(const QString& path) {
+    filePath = path;
+}
+
+/**
+ * @brief Sets the rule ID for this audit result.
+ * 
+ * @param id The rule ID that triggered this result.
+ */
+void AuditResult::setRuleId(const QString& id) {
+    ruleId = id;
 }
 
 /**
@@ -47,6 +101,15 @@ QString AuditResult::getSummary() const {
  */
 QString AuditResult::getFileName() const {
     return fileName;
+}
+
+/**
+ * @brief Retrieves the full file path associated with this audit result.
+ * 
+ * @return The file path as a QString.
+ */
+QString AuditResult::getFilePath() const {
+    return filePath;
 }
 
 /**
