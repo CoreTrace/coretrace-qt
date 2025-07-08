@@ -16,6 +16,11 @@
 #include <QFileSystemModel>
 #include <QKeyEvent>
 #include <QVBoxLayout>
+#include <QTimer>
+#include <QPropertyAnimation>
+#include <QGraphicsOpacityEffect>
+#include <QLabel>
+#include <QFrame>
 #include "syntax_highlighter.hpp"
 
 class MainWindow : public QMainWindow {
@@ -36,6 +41,9 @@ public:
 
     FileTreeView* getFileTreeView() const { return fileTree; }
     QTextEdit* getTextEditor() const { return textEditor; }
+    void highlightSecurityIssue(const AuditResult& result);
+    void clearSecurityHighlights();
+    void showSecurityNotification(const AuditResult& result);
 
 public slots:
     void toggleCliPanel();
@@ -43,6 +51,8 @@ public slots:
     void importFile(); 
     void toggleAutosave();
     void findNext();
+    void hideSecurityNotification();
+
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
 
@@ -52,6 +62,8 @@ private:
     void setupToolBar();
     void setupStatusBar();
     void setupCentralWidget();
+    void createSecurityNotificationWidget();
+    void animateHighlight(const QTextCursor& cursor, const QString& severity);
 
     // Member variables in initialization order
     QSplitter* mainSplitter;
@@ -71,6 +83,17 @@ private:
     QString currentFilePath;
     QList<UIComponent*> uiComponents;
     CppHighlighter* syntaxHighlighter;
+    
+    // Enhanced highlighting members
+    QFrame* securityNotificationFrame;
+    QLabel* securityNotificationIcon;
+    QLabel* securityNotificationText;
+    QTimer* notificationTimer;
+    QPropertyAnimation* notificationAnimation;
+    QGraphicsOpacityEffect* notificationOpacity;
+    QList<QTextEdit::ExtraSelection> currentHighlights;
+    QTimer* blinkTimer;
+    bool blinkState;
 };
 
 #endif // MAIN_WINDOW_HPP

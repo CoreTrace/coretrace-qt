@@ -35,6 +35,15 @@ echo "A binary named "ctrace-cli" is is needed at the same directory as the exec
 
 # Return to the original directory
 cd ..
-mv build/coretrace-qt .
-gcc -o ctrace-cli ctrace-cli.c
+echo "Cloning into coretrace and building it..."
+sleep 3
+git clone https://github.com/CoreTrace/coretrace.git
+cd coretrace
+mkdir -p build && cd build
+cmake ..                        \
+    -DPARSER_TYPE=CLI11         \
+    -DUSE_ADDRESS_SANITIZER=OFF
+
+make -j$(nproc)
+cd ../../
 ./coretrace-qt

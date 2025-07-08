@@ -18,6 +18,7 @@
 #include <QShortcut>
 #include <QKeySequence>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QStyle>
 #include <QCheckBox>
 #include <QFocusEvent>
@@ -30,6 +31,13 @@
 #include <QDialog>
 #include <QLineEdit>
 #include <QKeyEvent>
+#include <QTimer>
+#include <QPropertyAnimation>
+#include <QGraphicsOpacityEffect>
+#include <QLabel>
+#include <QFrame>
+#include <QPushButton>
+#include <QEasingCurve>
 
 /**
  * @brief Constructs the MainWindow object.
@@ -48,11 +56,18 @@ MainWindow::MainWindow(QWidget* parent)
     , outputDisplay(new OutputDisplay(this))
     , toggleCliPanelAction(new QAction("CTrace Options", this))
     , saveAction(new QAction("Save", this))
-    , importAction(new QAction("Open Folder", this))
+    , importAction(new QAction("Import", this))
     , autosaveAction(new QAction("Autosave", this))
     , autosaveEnabled(false)
-    , currentFilePath("")
     , syntaxHighlighter(nullptr)
+    , securityNotificationFrame(nullptr)
+    , securityNotificationIcon(nullptr)
+    , securityNotificationText(nullptr)
+    , notificationTimer(new QTimer(this))
+    , notificationAnimation(nullptr)
+    , notificationOpacity(nullptr)
+    , blinkTimer(new QTimer(this))
+    , blinkState(false)
 {
     setupUi();
     setupMenuBar();
@@ -212,6 +227,18 @@ void MainWindow::setupCentralWidget()
 
     // Create syntax highlighter
     syntaxHighlighter = new CppHighlighter(textEditor->document());
+    
+    // Initialize the security notification system
+    createSecurityNotificationWidget();
+    
+    // Connect text editor resize event to update notification position
+    connect(textEditor, &QTextEdit::textChanged, [this]() {
+        if (securityNotificationFrame && securityNotificationFrame->isVisible()) {
+            securityNotificationFrame->resize(textEditor->width() - 40, 
+                                             securityNotificationFrame->height());
+            securityNotificationFrame->move(20, 20);
+        }
+    });
     
     // Add editor container to splitter
     mainSplitter->addWidget(editorContainer);
@@ -410,10 +437,34 @@ void MainWindow::show() {
  * @param results The list of audit results to display.
  */
 void MainWindow::updateAuditResults(const QList<AuditResult>& results) {
+    // Clear previous security highlights
+    clearSecurityHighlights();
+    
+    // Update the results view
     for (UIComponent* component : uiComponents) {
         if (AuditResultsView* resultsView = dynamic_cast<AuditResultsView*>(component)) {
             resultsView->displayResults(results);
         }
+    }
+    
+    // Highlight security issues in the text editor
+    bool foundSecurityIssues = false;
+    for (const AuditResult& result : results) {
+        if (result.hasLocationInfo() && !result.getRuleId().isEmpty()) {
+            // Check if this result is for the currently open file
+            QString currentFile = QFileInfo(currentFilePath).fileName();
+            QString resultFile = QFileInfo(result.getFilePath()).fileName();
+            
+            if (currentFile == resultFile || result.getFilePath().contains(currentFile)) {
+                highlightSecurityIssue(result);
+                foundSecurityIssues = true;
+            }
+        }
+    }
+    
+    // Show summary message
+    if (foundSecurityIssues) {
+        statusBar()->showMessage(QString("Found security issues - highlighted in editor"), 8000);
     }
 }
 
@@ -580,4 +631,476 @@ void MainWindow::findNext() {
     }
     
     delete dialog;
+}
+
+/**
+ * @brief Highlights a security issue in the text editor with enhanced visual effects.
+ * @param result The audit result containing location information.
+ */
+void MainWindow::highlightSecurityIssue(const AuditResult& result) {
+    if (!result.hasLocationInfo()) {
+        return; // No location information available
+    }
+    
+    QTextDocument* document = textEditor->document();
+    QTextCursor cursor(document);
+    
+    // Move to the specified line (convert from 1-based to 0-based)
+    cursor.movePosition(QTextCursor::Start);
+    for (int i = 1; i < result.getLine(); ++i) {
+        if (!cursor.movePosition(QTextCursor::Down)) {
+            return; // Line not found
+        }
+    }
+    
+    // Get the severity level for different visual treatments
+    QString ruleId = result.getRuleId();
+    bool isError = ruleId.contains("error", Qt::CaseInsensitive) || 
+                   result.getMessage().contains("error", Qt::CaseInsensitive);
+    bool isWarning = ruleId.contains("warning", Qt::CaseInsensitive) || 
+                     result.getMessage().contains("warning", Qt::CaseInsensitive) ||
+                     result.getMessage().contains("CWE", Qt::CaseInsensitive);
+    
+    QString severity = isError ? "error" : (isWarning ? "warning" : "info");
+    
+    // Create multiple highlighting effects for maximum visibility
+    QList<QTextEdit::ExtraSelection> newHighlights;
+    
+    // 1. Highlight the entire line with a subtle background
+    QTextCursor lineHighlightCursor = cursor;
+    lineHighlightCursor.movePosition(QTextCursor::StartOfLine);
+    lineHighlightCursor.movePosition(QTextCursor::EndOfLine, QTextCursor::KeepAnchor);
+    
+    QTextEdit::ExtraSelection lineHighlight;
+    lineHighlight.cursor = lineHighlightCursor;
+    if (isError) {
+        lineHighlight.format.setBackground(QColor(255, 235, 235, 140)); // Slightly more visible for errors
+        lineHighlight.format.setProperty(QTextFormat::FullWidthSelection, true);
+    } else if (isWarning) {
+        lineHighlight.format.setBackground(QColor(255, 248, 220, 140)); // Slightly more visible for warnings
+        lineHighlight.format.setProperty(QTextFormat::FullWidthSelection, true);
+    } else {
+        lineHighlight.format.setBackground(QColor(245, 245, 255, 140)); // Slightly more visible for info
+        lineHighlight.format.setProperty(QTextFormat::FullWidthSelection, true);
+    }
+    newHighlights.append(lineHighlight);
+    
+    // 2. Highlight the specific problematic code section
+    QTextCursor specificCursor = cursor;
+    
+    // Move to the specified column if available
+    if (result.getColumn() > 0) {
+        specificCursor.movePosition(QTextCursor::StartOfLine);
+        specificCursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, result.getColumn() - 1);
+    }
+    
+    // Select the problematic text with enhanced logic
+    int selectionLength = 1;
+    if (result.getEndColumn() > result.getColumn()) {
+        selectionLength = result.getEndColumn() - result.getColumn();
+    } else {
+        // Enhanced text selection logic
+        QString lineText = specificCursor.block().text();
+        int startPos = specificCursor.positionInBlock();
+        
+        // Try to select meaningful code constructs
+        if (startPos < lineText.length()) {
+            QChar currentChar = lineText[startPos];
+            
+            // If we're at a function call, select the whole function
+            if (currentChar.isLetter() || currentChar == '_') {
+                // Select identifier
+                while (startPos + selectionLength < lineText.length() && 
+                       (lineText[startPos + selectionLength].isLetterOrNumber() || 
+                        lineText[startPos + selectionLength] == '_')) {
+                    selectionLength++;
+                }
+                
+                // If followed by '(', include the parentheses and arguments
+                if (startPos + selectionLength < lineText.length() && 
+                    lineText[startPos + selectionLength] == '(') {
+                    int parenCount = 0;
+                    while (startPos + selectionLength < lineText.length()) {
+                        QChar c = lineText[startPos + selectionLength];
+                        selectionLength++;
+                        if (c == '(') parenCount++;
+                        else if (c == ')') {
+                            parenCount--;
+                            if (parenCount == 0) break;
+                        }
+                    }
+                }
+            }
+            // If we're at a string literal, select the whole string
+            else if (currentChar == '"' || currentChar == '\'') {
+                QChar quote = currentChar;
+                selectionLength = 1;
+                while (startPos + selectionLength < lineText.length()) {
+                    QChar c = lineText[startPos + selectionLength];
+                    selectionLength++;
+                    if (c == quote && lineText[startPos + selectionLength - 2] != '\\') {
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Ensure minimum visibility
+        if (selectionLength < 3) {
+            selectionLength = qMin(10, lineText.length() - startPos);
+        }
+    }
+    
+    specificCursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, selectionLength);
+    
+    // Create enhanced specific highlight with more prominent styling
+    QTextEdit::ExtraSelection specificHighlight;
+    specificHighlight.cursor = specificCursor;
+    
+    if (isError) {
+        // Error styling - bright red with strong emphasis and border
+        specificHighlight.format.setBackground(QColor(255, 80, 80, 220));
+        specificHighlight.format.setForeground(QColor(255, 255, 255));
+        specificHighlight.format.setFontWeight(QFont::Bold);
+        specificHighlight.format.setUnderlineColor(QColor(200, 0, 0));
+        specificHighlight.format.setUnderlineStyle(QTextCharFormat::WaveUnderline);
+        specificHighlight.format.setProperty(QTextFormat::OutlinePen, QPen(QColor(150, 0, 0), 3));
+    } else if (isWarning) {
+        // Warning styling - orange/yellow with medium emphasis and border
+        specificHighlight.format.setBackground(QColor(255, 140, 0, 200));
+        specificHighlight.format.setForeground(QColor(255, 255, 255));
+        specificHighlight.format.setFontWeight(QFont::Bold);
+        specificHighlight.format.setUnderlineColor(QColor(255, 140, 0));
+        specificHighlight.format.setUnderlineStyle(QTextCharFormat::WaveUnderline);
+        specificHighlight.format.setProperty(QTextFormat::OutlinePen, QPen(QColor(200, 100, 0), 2));
+    } else {
+        // Info styling - blue with subtle emphasis and border
+        specificHighlight.format.setBackground(QColor(100, 150, 255, 170));
+        specificHighlight.format.setForeground(QColor(255, 255, 255));
+        specificHighlight.format.setFontWeight(QFont::Bold);
+        specificHighlight.format.setUnderlineColor(QColor(0, 100, 200));
+        specificHighlight.format.setUnderlineStyle(QTextCharFormat::DotLine);
+        specificHighlight.format.setProperty(QTextFormat::OutlinePen, QPen(QColor(0, 100, 200), 1));
+    }
+    
+    // Enhanced tooltip with more information and emojis
+    QString tooltip = QString("🚨 SECURITY ISSUE DETECTED 🚨\n\n"
+                             "🔍 Rule: %1\n"
+                             "📝 Description: %2\n"
+                             "📍 Location: Line %3, Column %4\n\n"
+                             "💡 Click to see full details in results panel")
+                     .arg(result.getRuleId())
+                     .arg(result.getMessage().split('\n').first()) // First line of message
+                     .arg(result.getLine())
+                     .arg(result.getColumn());
+    specificHighlight.format.setToolTip(tooltip);
+    
+    newHighlights.append(specificHighlight);
+    
+    // 3. Add a prominent left margin indicator with icon-like effect
+    QTextCursor marginCursor = cursor;
+    marginCursor.movePosition(QTextCursor::StartOfLine);
+    marginCursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+    
+    QTextEdit::ExtraSelection marginHighlight;
+    marginHighlight.cursor = marginCursor;
+    if (isError) {
+        marginHighlight.format.setBackground(QColor(255, 0, 0, 150));
+        marginHighlight.format.setProperty(QTextFormat::OutlinePen, QPen(QColor(200, 0, 0), 4));
+    } else if (isWarning) {
+        marginHighlight.format.setBackground(QColor(255, 165, 0, 150));
+        marginHighlight.format.setProperty(QTextFormat::OutlinePen, QPen(QColor(200, 100, 0), 3));
+    } else {
+        marginHighlight.format.setBackground(QColor(0, 100, 255, 150));
+        marginHighlight.format.setProperty(QTextFormat::OutlinePen, QPen(QColor(0, 100, 200), 2));
+    }
+    newHighlights.append(marginHighlight);
+    
+    // Store current highlights
+    currentHighlights.append(newHighlights);
+    
+    // Get existing selections and add the new highlights
+    QList<QTextEdit::ExtraSelection> extraSelections = textEditor->extraSelections();
+    extraSelections.append(newHighlights);
+    textEditor->setExtraSelections(extraSelections);
+    
+    // Move cursor to the highlighted issue for visibility
+    textEditor->setTextCursor(specificCursor);
+    textEditor->ensureCursorVisible();
+    
+    // Show prominent security notification
+    showSecurityNotification(result);
+    
+    // Start animated blinking effect
+    animateHighlight(specificCursor, severity);
+    
+    // Enhanced status message with emojis
+    QString severityIcon = isError ? "🔴" : (isWarning ? "🟡" : "🔵");
+    statusBar()->showMessage(QString("%1 SECURITY ISSUE: %2 at line %3 - CHECK NOTIFICATION ABOVE!")
+                           .arg(severityIcon)
+                           .arg(result.getRuleId())
+                           .arg(result.getLine()), 15000);
+}
+
+/**
+ * @brief Clears all security issue highlights from the text editor.
+ */
+void MainWindow::clearSecurityHighlights() {
+    // Clear current highlights list
+    currentHighlights.clear();
+    
+    // Clear all extra selections (this will remove both search and security highlights)
+    textEditor->setExtraSelections(QList<QTextEdit::ExtraSelection>());
+    
+    // Stop any blinking animation
+    if (blinkTimer->isActive()) {
+        blinkTimer->stop();
+    }
+    
+    // Hide notification
+    hideSecurityNotification();
+    
+    statusBar()->showMessage("Security highlights cleared", 2000);
+}
+
+/**
+ * @brief Creates and sets up the security notification widget.
+ */
+void MainWindow::createSecurityNotificationWidget() {
+    if (securityNotificationFrame) {
+        return; // Already created
+    }
+    
+    // Create notification frame
+    securityNotificationFrame = new QFrame(this);
+    securityNotificationFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
+    securityNotificationFrame->setLineWidth(2);
+    securityNotificationFrame->setStyleSheet(
+        "QFrame {"
+        "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+        "                 stop:0 #ffebee, stop:1 #ffcdd2);"
+        "    border: 2px solid #f44336;"
+        "    border-radius: 8px;"
+        "    padding: 8px;"
+        "}"
+    );
+    securityNotificationFrame->hide();
+    
+    // Create layout for notification
+    QHBoxLayout* notificationLayout = new QHBoxLayout(securityNotificationFrame);
+    notificationLayout->setContentsMargins(12, 8, 12, 8);
+    notificationLayout->setSpacing(12);
+    
+    // Create icon label
+    securityNotificationIcon = new QLabel(securityNotificationFrame);
+    securityNotificationIcon->setFixedSize(24, 24);
+    securityNotificationIcon->setScaledContents(true);
+    notificationLayout->addWidget(securityNotificationIcon);
+    
+    // Create text label
+    securityNotificationText = new QLabel(securityNotificationFrame);
+    securityNotificationText->setWordWrap(true);
+    securityNotificationText->setStyleSheet(
+        "QLabel {"
+        "    color: #d32f2f;"
+        "    font-weight: bold;"
+        "    font-size: 12px;"
+        "    background: transparent;"
+        "    border: none;"
+        "}"
+    );
+    notificationLayout->addWidget(securityNotificationText, 1);
+    
+    // Create close button
+    QPushButton* closeButton = new QPushButton("×", securityNotificationFrame);
+    closeButton->setFixedSize(20, 20);
+    closeButton->setStyleSheet(
+        "QPushButton {"
+        "    background: #f44336;"
+        "    color: white;"
+        "    border: none;"
+        "    border-radius: 10px;"
+        "    font-weight: bold;"
+        "    font-size: 14px;"
+        "}"
+        "QPushButton:hover {"
+        "    background: #d32f2f;"
+        "}"
+    );
+    connect(closeButton, &QPushButton::clicked, this, &MainWindow::hideSecurityNotification);
+    notificationLayout->addWidget(closeButton);
+    
+    // Position the notification at the top of the text editor
+    securityNotificationFrame->setParent(textEditor);
+    securityNotificationFrame->resize(textEditor->width() - 40, 60);
+    securityNotificationFrame->move(20, 20);
+    
+    // Set up opacity effect
+    notificationOpacity = new QGraphicsOpacityEffect(this);
+    securityNotificationFrame->setGraphicsEffect(notificationOpacity);
+    
+    // Set up animation
+    notificationAnimation = new QPropertyAnimation(notificationOpacity, "opacity", this);
+    notificationAnimation->setDuration(300);
+    notificationAnimation->setEasingCurve(QEasingCurve::InOutQuad);
+    
+    // Set up auto-hide timer
+    notificationTimer->setSingleShot(true);
+    notificationTimer->setInterval(10000); // Hide after 10 seconds
+    connect(notificationTimer, &QTimer::timeout, this, &MainWindow::hideSecurityNotification);
+}
+
+/**
+ * @brief Shows a prominent security notification for the given result.
+ * @param result The audit result to display.
+ */
+void MainWindow::showSecurityNotification(const AuditResult& result) {
+    createSecurityNotificationWidget();
+    
+    // Determine severity and set appropriate icon
+    QString ruleId = result.getRuleId();
+    bool isError = ruleId.contains("error", Qt::CaseInsensitive) || 
+                   result.getMessage().contains("error", Qt::CaseInsensitive);
+    bool isWarning = ruleId.contains("warning", Qt::CaseInsensitive) || 
+                     result.getMessage().contains("warning", Qt::CaseInsensitive) ||
+                     result.getMessage().contains("CWE", Qt::CaseInsensitive);
+    
+    // Set icon based on severity
+    QPixmap iconPixmap;
+    QString styleSheet;
+    if (isError) {
+        iconPixmap = QPixmap(":/icons/error.png");
+        styleSheet = "QFrame {"
+                    "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+                    "                 stop:0 #ffebee, stop:1 #ffcdd2);"
+                    "    border: 2px solid #f44336;"
+                    "    border-radius: 8px;"
+                    "    padding: 8px;"
+                    "}";
+    } else if (isWarning) {
+        iconPixmap = QPixmap(":/icons/warning.png");
+        styleSheet = "QFrame {"
+                    "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+                    "                 stop:0 #fff8e1, stop:1 #ffecb3);"
+                    "    border: 2px solid #ff9800;"
+                    "    border-radius: 8px;"
+                    "    padding: 8px;"
+                    "}";
+    } else {
+        iconPixmap = QPixmap(":/icons/info.png");
+        styleSheet = "QFrame {"
+                    "    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+                    "                 stop:0 #e3f2fd, stop:1 #bbdefb);"
+                    "    border: 2px solid #2196f3;"
+                    "    border-radius: 8px;"
+                    "    padding: 8px;"
+                    "}";
+    }
+    
+    securityNotificationFrame->setStyleSheet(styleSheet);
+    securityNotificationIcon->setPixmap(iconPixmap);
+    
+    // Set notification text
+    QString notificationText = QString("🚨 <b>%1</b><br>%2<br>📍 Line %3, Column %4")
+                              .arg(result.getRuleId())
+                              .arg(result.getMessage().left(100) + (result.getMessage().length() > 100 ? "..." : ""))
+                              .arg(result.getLine())
+                              .arg(result.getColumn());
+    securityNotificationText->setText(notificationText);
+    
+    // Update notification position and size
+    securityNotificationFrame->resize(textEditor->width() - 40, 
+                                     securityNotificationText->heightForWidth(textEditor->width() - 120) + 30);
+    securityNotificationFrame->move(20, 20);
+    
+    // Show with fade-in animation
+    notificationOpacity->setOpacity(0);
+    securityNotificationFrame->show();
+    notificationAnimation->setStartValue(0.0);
+    notificationAnimation->setEndValue(1.0);
+    notificationAnimation->start();
+    
+    // Start auto-hide timer
+    notificationTimer->start();
+}
+
+/**
+ * @brief Hides the security notification with fade-out animation.
+ */
+void MainWindow::hideSecurityNotification() {
+    if (!securityNotificationFrame || !securityNotificationFrame->isVisible()) {
+        return;
+    }
+    
+    notificationTimer->stop();
+    
+    // Fade out animation
+    notificationAnimation->setStartValue(1.0);
+    notificationAnimation->setEndValue(0.0);
+    
+    // Hide the frame when animation completes
+    connect(notificationAnimation, &QPropertyAnimation::finished, 
+            securityNotificationFrame, &QFrame::hide, Qt::UniqueConnection);
+    
+    notificationAnimation->start();
+}
+
+/**
+ * @brief Creates an animated highlight effect for the specified cursor position.
+ * @param cursor The text cursor indicating the position to animate.
+ * @param severity The severity level for color selection.
+ */
+void MainWindow::animateHighlight(const QTextCursor& cursor, const QString& severity) {
+    // Stop any existing blinking
+    if (blinkTimer->isActive()) {
+        blinkTimer->stop();
+    }
+    
+    // Store the cursor for blinking animation
+    QTextCursor animatedCursor = cursor;
+    
+    // Set up blinking timer
+    blinkState = false;
+    blinkTimer->setInterval(500); // Blink every 500ms
+    
+    // Create blinking effect
+    connect(blinkTimer, &QTimer::timeout, [this, animatedCursor, severity]() {
+        blinkState = !blinkState;
+        
+        if (blinkState) {
+            // Show enhanced highlight
+            QTextEdit::ExtraSelection blinkHighlight;
+            blinkHighlight.cursor = animatedCursor;
+            
+            if (severity == "error") {
+                blinkHighlight.format.setBackground(QColor(255, 0, 0, 200));
+                blinkHighlight.format.setForeground(QColor(255, 255, 255));
+            } else if (severity == "warning") {
+                blinkHighlight.format.setBackground(QColor(255, 165, 0, 200));
+                blinkHighlight.format.setForeground(QColor(255, 255, 255));
+            } else {
+                blinkHighlight.format.setBackground(QColor(0, 100, 255, 200));
+                blinkHighlight.format.setForeground(QColor(255, 255, 255));
+            }
+            
+            blinkHighlight.format.setFontWeight(QFont::Bold);
+            blinkHighlight.format.setProperty(QTextFormat::OutlinePen, QPen(QColor(0, 0, 0), 3));
+            
+            QList<QTextEdit::ExtraSelection> tempSelections = currentHighlights;
+            tempSelections.append(blinkHighlight);
+            textEditor->setExtraSelections(tempSelections);
+        } else {
+            // Hide enhanced highlight, show normal highlights
+            textEditor->setExtraSelections(currentHighlights);
+        }
+    });
+    
+    // Start blinking for 3 seconds
+    blinkTimer->start();
+    QTimer::singleShot(3000, [this]() {
+        if (blinkTimer->isActive()) {
+            blinkTimer->stop();
+            textEditor->setExtraSelections(currentHighlights);
+        }
+    });
 }

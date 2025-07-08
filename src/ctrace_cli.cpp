@@ -2,6 +2,7 @@
 #include <QProcess>
 #include <QStringList>
 #include <QDir>
+#include <QFile>
 #include <iostream>
 
 /**
@@ -14,20 +15,30 @@ QString CTraceCLI::execute(const QString& file, const QString& options) {
     std::cout << "Executing CTrace CLI with options: " << options.toStdString() << std::endl;
     QProcess process;
     
+    // Clear any existing cache/report files to force fresh analysis
+    QString reportFile = "ctrace-report.txt";
+    if (QFile::exists(reportFile)) {
+        QFile::remove(reportFile);
+        std::cout << "Removed existing report file: " << reportFile.toStdString() << std::endl;
+    }
+    
     // Split options into arguments
     QStringList arguments;
-    if (!options.isEmpty()) {
-        arguments = options.split(' ', Qt::SkipEmptyParts);
-    }
+    arguments.append("--input");
     arguments.append(file);
+    arguments.append("--sarif-format");
     
-    std::cout << "Full command: args-test " << arguments.join(" ").toStdString() << std::endl;
+    if (!options.isEmpty()) {
+        arguments.append(options.split(' ', Qt::SkipEmptyParts));
+    }
+    
+    std::cout << "Full command: ctrace " << arguments.join(" ").toStdString() << std::endl;
     
     // Set working directory to the binary's location
     process.setWorkingDirectory(QDir::currentPath());
     
     // Use the correct binary name
-    process.start("./args-test", arguments);
+    process.start("./coretrace/build/ctrace", arguments);
     
     // Wait for the process to finish with a timeout
     if (!process.waitForFinished(30000)) { // 30 second timeout
@@ -40,6 +51,8 @@ QString CTraceCLI::execute(const QString& file, const QString& options) {
         if (error.isEmpty()) {
             error = "Unknown error occurred";
         }
+        std::cout << "Process failed with exit code: " << process.exitCode() << std::endl;
+        std::cout << "Error output: " << error.toStdString() << std::endl;
         return "Error: " + error;
     }
     

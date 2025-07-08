@@ -2,5 +2,8 @@
 <RCC version="1.0">
     <qresource prefix="/">
         <file>icons/coretrace.png</file>
+        <file>icons/error.png</file>
+        <file>icons/warning.png</file>
+        <file>icons/info.png</file>
     </qresource>
-</RCC> 
+</RCC>

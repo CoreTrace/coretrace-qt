@@ -49,10 +49,10 @@ void CheckRequirements() {
     QString currentPath = QDir::currentPath();
     std::cout << "Current working directory: " << currentPath.toStdString() << std::endl;
     
-    QString cliPath = QDir::currentPath() + "/ctrace-cli";
+    QString cliPath = QDir::currentPath() + "/coretrace/build/ctrace";
     if (!QFile::exists(cliPath)) {
         QMessageBox::critical(nullptr, "Error", 
-            "coretrace-cli not found in the current directory.\n"
+            "Coretrace not found\n"
             "Expected path: " + cliPath);
         std::cerr << "coretrace-cli not found in the current directory." << std::endl;
         std::cerr << "Expected path: " << cliPath.toStdString() << std::endl;
