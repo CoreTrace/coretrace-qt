@@ -45,8 +45,9 @@ QList<AuditResult> AuditService::performAudit(const QString& file, const QString
     // Cache results with the combined key
     auditCache.cacheResults(cacheKey, results);
     
+    //TODO
     // Highlight errors in the file
-    errorHighlighter.highlightErrors(file, results);
+    //errorHighlighter.highlightErrors(file, results);
     
     return results;
 }
