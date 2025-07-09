@@ -54,7 +54,7 @@ MainWindow::MainWindow(QWidget* parent)
     , fileSystemModel(new QFileSystemModel(this))
     , cliPanel(new CliOptionsPanel(this))
     , outputDisplay(new OutputDisplay(this))
-    , toggleCliPanelAction(new QAction("CTrace Options", this))
+    , toggleCliPanelAction(new QAction(QIcon(":/resources/coretrace_logo.png"), "", this))
     , saveAction(new QAction("Save", this))
     , importAction(new QAction("Import", this))
     , autosaveAction(new QAction("Autosave", this))
@@ -156,6 +156,8 @@ void MainWindow::setupToolBar()
     // Keep only the CTrace Options button
     toggleCliPanelAction->setCheckable(true);
     toggleCliPanelAction->setChecked(false);
+    toggleCliPanelAction->setToolTip("Toggle CoreTrace Options Panel");
+    toggleCliPanelAction->setStatusTip("Show or hide the CoreTrace analysis options panel");
     connect(toggleCliPanelAction, &QAction::triggered, this, &MainWindow::toggleCliPanel);
     mainToolBar->addAction(toggleCliPanelAction);
 }

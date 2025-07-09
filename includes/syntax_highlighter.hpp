@@ -4,6 +4,8 @@
 #include <QSyntaxHighlighter>
 #include <QTextCharFormat>
 #include <QRegularExpression>
+#include <QVector>
+#include <QTextDocument>
 
 class SyntaxHighlighter : public QSyntaxHighlighter {
     Q_OBJECT
@@ -33,12 +35,27 @@ private:
 
     QVector<HighlightingRule> highlightingRules;
 
+    // Text formats
     QTextCharFormat keywordFormat;
     QTextCharFormat functionFormat;
     QTextCharFormat typeFormat;
     QTextCharFormat commentFormat;
     QTextCharFormat stringFormat;
     QTextCharFormat numberFormat;
+    QTextCharFormat preprocessorFormat;
+
+    // Multiline comment support
+    QRegularExpression commentStartExpression;
+    QRegularExpression commentEndExpression;
+
+    // Initialization methods
+    void initKeywordRules();
+    void initFunctionRules();
+    void initTypeRules();
+    void initCommentRules();
+    void initStringRules();
+    void initNumberRules();
+    void initPreprocessorRules();
 };
 
-#endif // SYNTAX_HIGHLIGHTER_HPP 
+#endif // SYNTAX_HIGHLIGHTER_HPP

@@ -44,7 +44,7 @@ IDE::IDE() {
     mainWindow->addToolButton(
         "Open Project",
         "Open a project directory",
-        QIcon::fromTheme("document-open"),
+        QIcon(":/resources/folder_open.png"),
         SLOT(selectProjectFolder()),
         projectManager
     );
