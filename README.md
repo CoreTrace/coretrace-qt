@@ -1,4 +1,4 @@
-# CoreTrace Qt IDE
+# CoreTrace Qt is **DISCONTINUED** [coretrace-gui](https://github.com/CoreTrace/coretrace-gui) is its successor !
 
 A modern Qt-based IDE for the CoreTrace project, providing a user-friendly interface for managing and analyzing traces.
 
